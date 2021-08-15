@@ -1,0 +1,10 @@
+---
+# vars file for samba_user_create
+
+username: pavel
+password: very_good_password
+givenname: Pavel
+surname: Milanes Costa
+email: pavelmc@example.com
+ou: ""
+description: "Created by Ansible"
