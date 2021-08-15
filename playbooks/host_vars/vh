@@ -1,0 +1,15 @@
+# host vars
+
+# CT properties
+ct_id: 103
+ct_hostname: "{{ ansible_hostname }}.{{ domain_fqdn }}"
+ct_ip: "192.168.0.6"
+ct_gw: "{{ default_gw }}"
+ct_dns: "192.168.0.4"
+ct_domain: "{{ domain_fqdn }}"
+ct_password: "{{ ct_default_password }}"
+ct_netmask: "{{ default_netmask }}"
+
+# service specific vars
+
+# 

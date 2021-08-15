@@ -1,0 +1,9 @@
+# Pavel Milanes [pavelmc@gamil.com] 2021
+#
+# Target: Configure the proxmox nodes to 
+#
+# Requisite: Create all CTs we need as per host vars
+
+---
+- name: Configure Proxmox for Ansible
+  

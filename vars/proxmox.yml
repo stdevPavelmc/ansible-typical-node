@@ -1,0 +1,7 @@
+# variables for the proxmox access
+
+proxmox_api_host: 192.168.0.2
+proxmox_api_user: root@pam
+proxmox_template: 'local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz'
+proxmox_bridge: vmbr0
+# proxmox api passwords is on secrets file

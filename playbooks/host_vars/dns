@@ -1,0 +1,18 @@
+# host vars
+
+# CT properties
+ct_id: 101
+ct_hostname: "{{ ansible_hostname }}.{{ domain_fqdn }}"
+ct_ip: "192.168.0.3"
+ct_gw: "{{ default_gw }}"
+ct_dns: "{{ ct_ip }}"
+ct_domain: "{{ domain_fqdn }}"
+ct_password: "{{ ct_default_password }}"
+ct_netmask: "{{ default_netmask }}"
+
+# service specific vars
+
+# catching dns / bind
+upstream_dns_1: "200.55.128.4"
+upstream_dns_2: "200.55.128.3"
+upstream_dns_3: "8.8.8.8"

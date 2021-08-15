@@ -1,0 +1,14 @@
+[libdefaults]
+        default_realm = {{ samba_realm }}
+        dns_lookup_realm = false
+        dns_lookup_kdc = true
+
+[realms]
+{{ samba_realm }} = {
+  kdc = {{ samba_fqdn | lower }}
+  admin_server = {{ samba_fqdn | lower }}
+}
+
+[domain_realm]
+  .{{ samba_realm | lower }} = {{ samba_fqdn | lower }}
+  {{ samba_realm | lower }} = {{ samba_fqdn | lower }}

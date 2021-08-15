@@ -1,0 +1,26 @@
+# Domain wide parameters
+# needs to include secrets.yml
+
+#samba domain
+domain_fqdn: "epfoc.local"
+domain_dmz_gw: 192.168.0.1
+domain_dmz_netmask: 27
+domain_lan_dns: 192.168.0.4
+domain_out_dns: 192.168.0.3
+domain_email_domain: epfoc.sld.cu
+
+# samba related
+samba_realm: "{{ domain_fqdn| upper }}"
+samba_fqdn: "dc.{{ domain_fqdn }}"
+samba_netbios: EPFOC
+samba_base_dn: "DC=epfoc,DC=local"
+samba_base_ou: "EPFOC"
+
+# networking
+default_gw: "192.168.0.1" 
+default_netmask: "27"
+
+# External DNS
+upstream_dns_1: "200.55.128.4"
+upstream_dns_2: "200.55.128.3"
+upstream_dns_3: "8.8.8.8"

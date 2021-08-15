@@ -1,0 +1,54 @@
+# Pavel Milanes [pavelmc@gamil.com] 2021
+#
+# Target: Create the samba4 domain users
+#
+# # It reads the OUs/users from a csv file, format like this:
+#   givenname,surname,username,password,mail,ou
+#   Pavel,Milanes Costa, pavel.milanes,Rasput1n,pavel.milanes@domain.com,Sysadmins
+#   [...]
+
+---
+- name: Read Users details from file
+  hosts: localhost
+
+  tasks:
+    - name: Read the OUs from the csv
+      shell:  awk '(NR>1)' ../data/users.csv | cut -d ',' -f 4 | sort | uniq
+      register: domain_ous
+
+    - debug:
+        msg: "OUs {{ item }}"
+      loop: "{{ domain_ous.stdout_lines }}"
+
+    - read_csv:
+        path: ../data/users.csv
+      register: userlist
+
+    - debug:
+        msg: "Loaded {{ item.username }}"
+      loop: "{{ userlist.dict|dict2items }}"
+
+
+- name: Create the OUs on the domain
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/dc.yml"
+
+  tasks:
+    - name: Action
+      shell: samba-tool ou create "OU={{ item }},OU={{ samba_base_ou }}" || /bin/true
+      with_items:
+        - "{{ hostvars['localhost']['domain_ous'].stdout_lines }}"
+
+- name: Create the Users on the domain
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/domain.yml"
+    - "../vars/dc.yml"
+
+  tasks:
+    - name: Creation of users
+      shell: samba-tool user create {{ item.username }} {{ domain_users_default_password }} --given-name='{{ item.givenname }}' --surname='{{ item.surname }}' --mail-address="{{ item.username }}@{{ domain_email_domain }}" --userou='OU={{ item.ou }},OU={{ samba_base_ou }}' --description="Created by Ansible" || /bin/true
+      loop: "{{ hostvars['localhost']['userlist'].list }}"
