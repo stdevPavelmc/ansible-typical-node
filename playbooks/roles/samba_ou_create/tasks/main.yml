@@ -1,0 +1,12 @@
+---
+# tasks file for samba_ou_create
+
+- name: Check if the ou is there already
+  shell: samba-tool ou list
+  register: ou_list
+  changed_when: False
+  failed_when: False 
+
+- name: Create the user only if not present on the system
+  shell: samba-tool ou create "{{ ou }}" --description="Created by Ansible"
+  when: 'ou not in ou_list.stdout_lines'
