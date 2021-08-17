@@ -24,3 +24,11 @@ default_netmask: "27"
 upstream_dns_1: "200.55.128.4"
 upstream_dns_2: "200.55.128.3"
 upstream_dns_3: "8.8.8.8"
+
+# Alternate local repositories
+repo_proto: http
+repo_host: 192.168.0.29
+repo_port: 8080
+repo_root: focal
+# use only "mine" or just "add"
+repo_flavors: focal

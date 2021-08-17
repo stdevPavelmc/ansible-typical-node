@@ -1,0 +1,4 @@
+# Ansible configured 
+deb [trusted=true] {{ repo_proto }}://{{ repo_host }}:{{ repo_port | default(80) }}/{{ repo_root }}/ {{ repo_flavors }} main universe multiverse restricted
+deb [trusted=true] {{ repo_proto }}://{{ repo_host }}:{{ repo_port | default(80) }}/{{ repo_root }}/ {{ repo_flavors }}-updates main universe multiverse restricted
+deb [trusted=true] {{ repo_proto }}://{{ repo_host }}:{{ repo_port | default(80) }}/{{ repo_root }}/ {{ repo_flavors }}-security main universe multiverse restricted
