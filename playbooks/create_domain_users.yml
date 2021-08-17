@@ -1,0 +1,79 @@
+# Pavel Milanes [pavelmc@gamil.com] 2021
+#
+# Target: Create the samba4 domain users
+#
+# # It reads the OUs/users from a csv file, format like this:
+#   givenname,surname,username,mail,ou
+#   Pavel,Milanes Costa,pavel.milanes,pavel.milanes@domain.com,Sysadmins
+#   [...]
+
+---
+- name: Read Users details from file
+  hosts: localhost
+
+  tasks:
+    - name: Read the OUs from the csv
+      shell:  awk '(NR>1)' ../data/users.csv | cut -d ',' -f 4 | sort | uniq
+      register: domain_ous
+      changed_when: False
+
+    - name: Read users from the csv
+      read_csv:
+        path: ../data/users.csv
+      register: userlist
+      changed_when: False
+
+- name: Create the OUs on the domain
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Creation of OUs
+      include_role:
+        name: samba_ou_create
+      vars:
+        ou: "OU={{ item }},OU={{ samba_base_ou }}"
+      with_items:
+        - "{{ hostvars['localhost']['domain_ous'].stdout_lines }}"
+
+- name: Create the Users on the domain
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Creation of users
+      include_role:
+        name: samba_user_create
+      vars:
+          username: "{{ item.username }}"
+          password: "{{ domain_users_default_password }}"
+          givenname: "{{ item.givenname }}"
+          surname: "{{ item.surname }}"
+          email: "{{ item.username }}@{{ domain_email_domain }}"
+          ou: "OU={{ item.ou }},OU={{ samba_base_ou }}"
+          description: "Created by Ansible"
+      loop: "{{ hostvars['localhost']['userlist'].list }}"
+
+- name: Create the Linux link user
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/mail.yml"
+
+  tasks:
+    - name: Creation Linux user
+      include_role:
+        name: samba_user_create
+      vars:
+          username: "{{ ma_username }}"
+          password: "{{ ma_ldap_bind_password }}"
+          givenname: "{{ ma_givenname }}"
+          surname: "{{ ma_surname }}"
+          email: "fake@example.com"
+          description: "Created by Ansible"
