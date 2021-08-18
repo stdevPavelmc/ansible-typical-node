@@ -15,6 +15,7 @@ samba_fqdn: "dc.{{ domain_fqdn }}"
 samba_netbios: EPFOC
 samba_base_dn: "DC=epfoc,DC=local"
 samba_base_ou: "EPFOC"
+# master administrator's passwords is in secrets file
 
 # networking
 default_gw: "192.168.0.1" 
@@ -32,3 +33,4 @@ repo_port: 8080
 repo_root: focal
 # use only "mine" or just "add"
 repo_flavors: focal
+repo_source: local
