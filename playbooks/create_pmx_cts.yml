@@ -1,0 +1,62 @@
+# Pavel Milanes [pavelmc@gamil.com] 2021
+#
+# Target: Create the CT machines in a proxmox host
+#
+# Requisite: Create all CTs we need as per host vars
+
+---
+- name: Create a new CT
+  hosts: pve
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+    - "../vars/cts.yml"
+
+  tasks:
+    - name: Create CTs
+      community.general.proxmox:
+        proxmox_default_behavior: compatibility
+        vmid: "{{ item.value.id | default([]) }}"
+        api_user: "{{ api_user }}"
+        api_password: "{{ api_password }}"
+        api_host: "{{ api_host }}"
+        hostname: "{{ item.key }}.{{ domain_fqdn }}"
+        node: "{{ item.value.node | default(defaults.node) }}"
+        cores: "{{ item.value.cores | default(defaults.cores) }}"
+        cpus: "{{ item.value.cpus | default(defaults.cpus) }}"
+        memory: "{{ item.value.memory | default(defaults.memory) }}"
+        swap: "{{ item.value.swap | default(defaults.swap) }}"
+        disk: "{{ item.value.disk | default(defaults.disk) }}"
+        storage: "{{ item.value.storage | default(defaults.storage) }}"
+        description: Ansible Managed
+        unprivileged: "{{ item.value.unprivileged | default(defaults.unprivileged) }}"
+        onboot: "{{ item.value.onboot | default(defaults.onboot) }}"
+        # timezone: "{{ item.value.timezone | default(defaults.timezone) }}" 
+        # pubkey: "{{ item.value.pubkey | default(defaults.pubkey) }}"
+        searchdomain: "{{ domain_fqdn }}"
+        nameserver: "{{ item.value.dns | default(defaults.dns) }}"
+        ostemplate: "{{ defaults.template }}"
+        netif: '{"net0":"name=eth0,gw={{ item.value.gw | default(domain_dmz_gw) }},ip={{ item.value.ip }}/{{ domain_dmz_netmask }},bridge={{ item.value.bridge | default(defaults.bridge) }}"}'
+        state: present
+      with_dict: "{{ cts }}"
+      loop_control:
+        pause: 5
+      register: created_cts_pve
+
+    - name: Start CTs
+      proxmox:
+        api_user: "{{ api_user }}"
+        api_password: "{{ api_password }}"
+        api_host: "{{ api_host }}"
+        vmid: "{{ item.item.value.id }}"
+        state: started
+      with_items: "{{ created_cts_pve.results }}"
+    
+    - name: Copy controllers pubkey to the nodes
+      shell: echo "mkdir -p /root/.ssh && echo '{{ api_pubkey }}' > /root/.ssh/authorized_keys" | pct enter {{ item.item.value.id }}
+      with_items: "{{ created_cts_pve.results }}"
+
+    - name: Set correct timezone on the nodes
+      shell: echo "timedatectl set-timezone {{ defaults.timezone }}" | pct enter {{ item.item.value.id }}
+      with_items: "{{ created_cts_pve.results }}"
