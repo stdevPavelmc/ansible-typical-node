@@ -1,0 +1,63 @@
+# Pavel Milanes [pavelmc@gamil.com] 2021
+#
+# Target: Create the CT machines using a local LXC service
+#
+# Requisites:
+# - ansible-galaxy collection install community.general
+# - apt install python3-lxc
+# - Read docs on how to setup a proper LXC env here: https://ubuntu.com/server/docs/containers-lxc
+
+---
+- name: Create a new CT
+  hosts: localhost
+  connection: local
+  become: True
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/cts.yml"
+  vars:
+    distro: ubuntu
+    release: focal
+    arch: amd64
+
+  tasks:
+    - name: Install python3-lxc
+      package:
+        name: python3-lxc
+        state: present
+
+    - name: Create CTs
+      block:
+        - name: Install from local template
+          community.general.lxc_container:
+            name: "{{ item.key }}"
+            template: ubuntu
+            state: started
+            template_options: --release focal --dist ubuntu --arch amd64
+          with_dict: "{{ cts }}"
+          loop_control:
+            pause: 5
+          register: created_cts_lxc
+      rescue:
+        - name: Install by doenloading the template
+          community.general.lxc_container:
+            name: "{{ item.key }}"
+            template: download
+            state: started
+            template_options: --release focal --dist ubuntu --arch amd64
+          with_dict: "{{ cts }}"
+          loop_control:
+            pause: 5
+          register: created_cts_lxc
+
+    - name: Install openssh in the CTs
+      shell: echo "apt install openssh-server -y" | lxc-attach --name="{{ item.item.key }}" -- 
+      with_items: "{{ created_cts_lxc.results }}"
+
+    - name: Copy controllers pubkey to the nodes
+      shell: echo "mkdir -p /root/.ssh && echo '{{ api_pubkey }}' > /root/.ssh/authorized_keys" | lxc-attach --name="{{ item.item.key }}" -- 
+      with_items: "{{ created_cts_lxc.results }}"
+
+    - name: Set correct timezone on the nodes
+      shell: echo "timedatectl set-timezone {{ defaults.timezone }}" | lxc-attach --name="{{ item.item.key }}" -- 
+      with_items: "{{ created_cts_lxc.results }}"
