@@ -1,4 +1,4 @@
-# Pavel Milanes [pavelmc@gamil.com] 2021
+# Pavel Milanes [pavelmc@gmail.com] 2021
 #
 # Target: Create the CT machines using a local LXC service
 #
@@ -26,29 +26,16 @@
         name: python3-lxc
         state: present
 
-    - name: Create CTs
-      block:
-        - name: Install from local template
-          community.general.lxc_container:
-            name: "{{ item.key }}"
-            template: ubuntu
-            state: started
-            template_options: --release focal --dist ubuntu --arch amd64
-          with_dict: "{{ cts }}"
-          loop_control:
-            pause: 5
-          register: created_cts_lxc
-      rescue:
-        - name: Install by doenloading the template
-          community.general.lxc_container:
-            name: "{{ item.key }}"
-            template: download
-            state: started
-            template_options: --release focal --dist ubuntu --arch amd64
-          with_dict: "{{ cts }}"
-          loop_control:
-            pause: 5
-          register: created_cts_lxc
+    - name: Install by downloading the template
+      community.general.lxc_container:
+        name: "{{ item.key }}"
+        template: download
+        state: started
+        template_options: --release focal --dist ubuntu --arch amd64 --no-validate
+      with_dict: "{{ cts }}"
+      loop_control:
+        pause: 5
+      register: created_cts_lxc
 
     - name: Install openssh in the CTs
       shell: echo "apt install openssh-server -y" | lxc-attach --name="{{ item.item.key }}" -- 
