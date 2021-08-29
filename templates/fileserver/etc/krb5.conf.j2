@@ -1,0 +1,14 @@
+[libdefaults]
+    dns_lookup_realm = false
+    dns_lookup_kdc = true
+    default_realm = {{ samba.realm }}
+
+[realms]
+LXC.CU = {
+  kdc = {{ samba.host }}
+  admin_server = {{ samba.host }}
+}
+
+[domain_realm]
+  .lxc.cu = {{ samba.host }}
+  lxc.cu = {{ samba.host }}

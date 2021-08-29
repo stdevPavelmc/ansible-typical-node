@@ -1,0 +1,134 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: install & configure a samba server as domain member and file server
+
+---
+- name: Install the samba 4 domain controller and configure it
+  hosts: fileserver
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+    - "../vars/cts.yml"
+
+  tasks:
+    - name: Validation for netbios vs realm ({{ samba.netbios }} / {{ samba.realm }})
+      fail:
+        msg: "Samba NETBIOS must be shorter and not equal than REALM"
+      when: samba.realm == samba.netbios
+
+    - name: Disable & stop systemd-resolved
+      ansible.builtin.systemd:
+        name: systemd-resolved
+        enabled: no
+        masked: yes
+        state: stopped
+
+    - name: Install samba and others...
+      package:
+        name: "{{ fileserver.packages }}"
+        state: present
+
+    - name: Install krb5.conf
+      template:
+        src: ../templates/fileserver/etc/krb5.conf.j2
+        dest: /etc/krb5.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Update /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1'
+        line: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}    {{ ansible_hostname }}.{{ domain.fqdn }}   {{ ansible_hostname.split('.')[0] }}"
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Check if the resolv.conf is there and type
+      stat:
+        path: /etc/resolv.conf
+      register: resolvconf
+  
+    - name: Modify the nameserver if file
+      replace:
+        path: /etc/resolv.conf
+        regexp: "^nameserver.*$"
+        replace: "nameserver {{ defaults.dns }}"
+      when:
+        - resolvconf.stat.exists|bool
+        - not resolvconf.stat.islnk|bool
+
+    - name: Modify the search base if file
+      replace:
+        path: /etc/resolv.conf
+        regexp: "^search.*"
+        replace: "search {{ domain.fqdn }}"
+      when:
+        - resolvconf.stat.exists|bool
+        - not resolvconf.stat.islnk|bool
+
+    - name: Remove the resol.conf if link
+      shell: rm /etc/resolv.conf
+      when:
+        - resolvconf.stat.exists|bool
+        - resolvconf.stat.islnk|bool
+
+    - name: Create the resolv.conf
+      shell: printf "nameserver {{ defaults.dns }}\nsearch {{ domain.fqdn }}\n" > /etc/resolv.conf
+      when: ( not resolvconf.stat.exists|bool or resolvconf.stat.islnk|bool )
+
+    - name: Copy default files for samba
+      template:
+        src: "../templates/fileserver/etc/samba/{{ item }}.j2"
+        dest: "/etc/samba/{{ item }}"
+      loop:
+        - smb.conf
+        - user.map
+
+    - name: NSSWITCH passwd
+      replace:
+        path: /etc/nsswitch.conf
+        regexp: "^passwd:.*"
+        replace: "passwd:   files winbind"
+
+    - name: NSSWITCH group
+      replace:
+        path: /etc/nsswitch.conf
+        regexp: "^group:.*"
+        replace: "group:    files winbind"
+
+    - name: Test Samba configuration
+      shell: cat /dev/null | /usr/bin/testparm
+      changed_when: False
+
+    - name: check if the server is alreadly joined on the domain
+      shell: /usr/bin/wbinfo --ping-dc
+      changed_when: False
+      failed_when: False
+      register: domtest
+
+    - name: Join as member
+      command: echo "{{ samba_adminpass }}" | net ads join -U administrator
+      when: ( domtest.rc != 0 )
+      register: joined
+    
+    - name: Restart services
+      ansible.builtin.systemd:
+        name: "{{ fileserver.services }}"
+        enabled: yes
+        masked: no
+        state: restarted
+      when:
+        - domtest.rc|int != 0
+        - joined.rc|int != 0\
+
+    - name: Create shares folders
+      file:
+        path: "{{ item.path }}"
+        mode: 0775
+        owner: "{{ samba.netbios }}\\Domain admins"
+        group: "{{ samba.netbios }}\\Domain users"
+        state: directory
+      loop: "{{ fileserver.shares }}"
