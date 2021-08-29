@@ -1,4 +1,4 @@
-# Pavel Milanes [pavelmc@gamil.com] 2021
+# Pavel Milanes [pavelmc@gmail.com] 2021
 #
 # Target: Configure local repositories [optional] & upgrade the systems
 #
@@ -21,20 +21,27 @@
         group: root
         mode: '0644'
         backup: yes
-      when: repo_source == "local"
+      when: repo.source == "local"
 
     - name: Update apt repo and cache on all Debian/Ubuntu boxes
-      apt: update_cache=yes force_apt_get=yes cache_valid_time=259200
+      apt:
+        update_cache: yes
+        force_apt_get: yes
+        cache_valid_time: 1800
 
     - name: Upgrade the system
       block:
-        - name: Upgrade all packages on servers
-          apt: upgrade=dist force_apt_get=yes
+        - name: Update all packages
+          apt:
+            upgrade: dist
+            force_apt_get: yes
 
       rescue:
         - name: Rescue a failed upgrade
           shell: dpkg --configure -a
 
       always:
-        - name: Upgrade all packages on servers
-          apt: upgrade=dist force_apt_get=yes
+        - name: Upgrade all packages
+          apt:
+            upgrade: dist
+            force_apt_get: yes
