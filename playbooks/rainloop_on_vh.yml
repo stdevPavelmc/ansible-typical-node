@@ -1,0 +1,68 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: install latest rainloop webmail from the internet or from local
+
+---
+- name: Check if local copy is here
+  hosts: localhost
+  vars_files:
+    - "../vars/vh.yml"
+
+  tasks:
+    - name: Check if the local install is there
+      stat:
+        path: "../data/{{ rainloop.local }}"
+      register: rainloop_local_install
+
+- name: Install rainloop webmail 
+  hosts: vh
+  remote_user: root
+  vars_files:
+    - "../vars/domain.yml"
+    - "../vars/vh.yml"
+    
+  tasks:
+    - name: Check for webmail folder
+      stat:
+        path: "{{ virtual_hosts.webmail.root }}"
+      register: rainloop_folder
+
+    - name: Create rainloop folder if needed
+      file:
+        path: "{{ virtual_hosts.webmail.root }}"
+        state: directory
+        mode: 0755
+        group: www-data
+        owner: www-data
+      when: ( not rainloop_folder.stat.exists|bool )
+
+    - name: Check if it's alreadly installed
+      stat:
+        path: "{{ virtual_hosts.webmail.root }}/index.php"
+      register: rainloop_index
+
+    - name: Install the local version
+      copy:
+        dest: "{{ virtual_hosts.webmail.root }}"
+        src: "../data/{{ rainloop.local }}"
+      when:
+        - ( hostvars.localhost.rainloop_local_install.stat.exists|bool )
+        - ( not rainloop_index.stat.exists|bool )
+      
+    - name: Install unzip
+      package:
+        name: unzip
+        state: present
+    
+    - name: Unzip the file
+      shell: cd "{{ virtual_hosts.webmail.root }}/" && unzip "{{ rainloop.local }}" && rm "{{ rainloop.local }}"
+      when: ( not rainloop_index.stat.exists|bool )
+    
+    - name: Fix privileges & ownership
+      shell: chown -R 33:33 "{{ virtual_hosts.webmail.root }}/" && chmod -R 0755 "{{ virtual_hosts.webmail.root }}/" && chmod 0555 "{{ virtual_hosts.webmail.root }}/data/" 
+      when: ( not rainloop_index.stat.exists|bool )
+
+    - name: Installl deps
+      package:
+        name: "{{ rainloop.deps }}"
+        state: present
