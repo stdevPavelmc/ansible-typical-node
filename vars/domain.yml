@@ -1,36 +1,127 @@
 # Domain wide parameters
 # needs to include secrets.yml
 
-#samba domain
-domain_fqdn: "epfoc.local"
-domain_dmz_gw: 192.168.0.1
-domain_dmz_netmask: 27
-domain_lan_dns: 192.168.0.4
-domain_out_dns: 192.168.0.3
-domain_email_domain: epfoc.sld.cu
+---
+# Domain general data
+domain:
+  netbios: lxc.cu
+  fqdn: lxc.cu
+  # Yes, explicit full email, user must exist on cvs to load later, or be an alias
+  postmaster: pavelmc@lxc
 
 # samba related
-samba_realm: "{{ domain_fqdn| upper }}"
-samba_fqdn: "dc.{{ domain_fqdn }}"
-samba_netbios: EPFOC
-samba_base_dn: "DC=epfoc,DC=local"
-samba_base_ou: "EPFOC"
-# master administrator's passwords is in secrets file
+samba:
+  realm: "{{ domain.netbios | upper}}"
+  host: "dc.{{ domain.netbios }}"
+  netbios: &netbios "{{ domain.netbios.split('.')[0]| upper }}"
+  base_dn: "DC={{ domain.fqdn | replace('.',',DC=') }}"
+  base_ou: *netbios
+  # master administrator's passwords is in secrets file
+  # AD LDAP user details (must match ldap_bind_user below)
+  link:
+    user: "linux"
+    # passwd is on secrets like: ldap_bind_passwd
+
+# Self Signed Certificate
+my_cert:
+  country: CU
+  state: Camaguey
+  city: Camaguey
+  organization: LXC
+  ou: Nodo
+  hostname: "{{ samba.host }}"
+  cert: "../data/sscert/{{ domain.fqdn }}.crt"
+  key: "../data/sscert/{{ domain.fqdn }}.key"
 
 # networking
-default_gw: "192.168.0.1" 
-default_netmask: "27"
-
-# External DNS
-upstream_dns_1: "200.55.128.4"
-upstream_dns_2: "200.55.128.3"
-upstream_dns_3: "8.8.8.8"
+net:
+  gw: 10.0.3.1
+  netmask: 24
+  dns:
+    lan: 10.0.3.1
+    dmz: 10.0.3.1
+    upstream:
+      - 1.0.0.1
+      - 1.1.1.1
+      - 8.8.8.8
 
 # Alternate local repositories
-repo_proto: http
-repo_host: 192.168.0.29
-repo_port: 8080
-repo_root: focal
-# use only "mine" or just "add"
-repo_flavors: focal
-repo_source: local
+repo:
+  proto: http
+  host: 10.0.3.1
+  port: 8080
+  root: focal
+  flavors: focal
+  source: local
+
+# mail settings
+mail:
+  # General config items
+  domain: "{{ domain.fqdn }}"
+  mailadmin: "{{ domain.postmaster }}"
+  hostname: "mail.{{ domain.fqdn }}"
+  # sysadmins:
+  # copia:
+  # message_size: 2
+  # default_mailbox_size: 200M
+  mynetworks: '!10.0.3.6, 10.0.3.0/{{ net.netmask}}'
+  # smarthost:
+  #X   national: ".cu"
+  everyone: todos@{{ domain.fqdn }}
+  everyone_external_access: False
+  # LDAP
+  hostad: "{{ samba.host }}"
+  ldap_bind_user: "CN={{ samba.link.user }},CN=Users,{{ samba.base_dn }}"
+  ldap_base: "OU={{ samba.base_ou }},{{ samba.base_dn }}"
+  # ldap_bind_password: see secrets.yml!
+  # Mailbox
+  # mail_storage: /home/vmail
+  # DNSBL settings
+  #dnsbl_enable: False
+  # dnsbl_list:
+  # content filters
+  # dovecot_master_spam_filter: False
+  # dnsbl_enable: False
+  # spf_enable: False
+  # spamd_enable: False
+  # av_enable: True
+  # av_use_alternate_mirror: True
+  # AV alternate mirrors
+  # av_alternate_mirror:
+  # - http://mirror.webtastix.net/clamav
+  # - http://103.230.76.202/clamav
+  # - http://mirrors.mediatemple.net/freshclam
+  # - http://repo.virtualhosting.hk/clamavdb"
+  # proxy settings
+  # use_proxy: False
+  # proxy_user: pavel
+  # proxy_pass: Super_Password
+  # proxy_host: 1.2.3.4
+  # proxy_port: 8080
+  # others
+  disclaimer_enable: False
+  # disclaimer_reach_locals: False
+  # maildir_removal: False
+  # statistics_enable: True
+  # host_on_internet: False
+
+
+virtual_hosts:
+  default:
+    isdefault: True
+    root: /var/www/html/
+    name: vh
+    body_size: 1M
+    dname: "{{ domain.fqdn }}"
+  webmail:
+    isdefault: false
+    root: /var/www/webmail/
+    name: webmail
+    body_size: 2M
+    dname: "{{ domain.fqdn }}"
+  www:
+    isdefault: false
+    root: /var/www/www/
+    name: wwww
+    body_size: 2M
+    dname: "{{ domain.fqdn }}"
