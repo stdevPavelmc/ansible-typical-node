@@ -1,0 +1,33 @@
+# Pavel Milanes [pavelmc@gamil.com] 2021
+#
+# Target: Force re-generation a self signed certificate on ../data/sscert/
+
+---
+- name: Generate a new self-signed certificate
+  hosts: localhost
+  connection: local
+  vars_files:
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Check for cert "{{ my_cert.cert }}"
+      local_action: stat path="{{ my_cert.cert }}"
+      register: stat_cert
+    
+    - name: Check for key "{{ my_cert.key }}"
+      local_action: stat path="{{ my_cert.key }}"
+      register: stat_key
+
+    - name: Erase existent cert
+      file:
+        path: "{{ my_cert.cert }}"
+        state: absent
+      when: stat_cert.stat.exists|bool
+
+    - name: Erase existent key
+      file:
+        path: "{{ my_cert.key }}"
+        state: absent
+      when: stat_key.stat.exists|bool
+
+    - include: gen_ss_certs.yml

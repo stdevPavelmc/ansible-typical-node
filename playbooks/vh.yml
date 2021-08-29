@@ -1,0 +1,100 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: install & configure a Virtual Hosting server using Nginx
+
+---
+- name: Check if the certs to supply to the host is there
+  hosts: localhost
+  vars_files:
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Cert file is there
+      stat:
+        path: ../data/sscert/{{ domain.fqdn }}.crt
+      register: cert_is_there
+
+    - name: Key file is there
+      stat:
+        path: ../data/sscert/{{ domain.fqdn }}.crt
+      register: key_is_there
+
+- name: Install the nginx server with default configs 
+  hosts: vh
+  remote_user: root
+  vars_files:
+    - "../vars/domain.yml"
+    - "../vars/vh.yml"
+    
+  tasks:
+    # install nginx & php dependencies
+    - include: ../tasks/nginx_php_install.yml
+
+    # get Ips from cuba and set it up for vh
+    - include: ../tasks/get_cuba_ips.yml
+
+    - name: Check for ssl folder
+      stat:
+        path: /etc/nginx/ssl
+      register: ssl_folder
+
+    - name: Create ssl folder if needed
+      file:
+        path: /etc/nginx/ssl
+        state: directory
+        mode: 0755
+        group: root
+        owner: root
+      when: ( not ssl_folder.stat.exists|bool )
+
+    - name: Copy certs
+      template:
+        src: ../data/sscert/{{ domain.fqdn }}.crt
+        dest: /etc/nginx/ssl/{{ domain.fqdn }}.crt
+        owner: root
+        group: root
+        mode: '0644'
+      when:
+        - hostvars.localhost.key_is_there.stat.exists|bool
+        - hostvars.localhost.cert_is_there.stat.exists|bool
+        
+    - name: Copy key
+      template:
+        src: ../data/sscert/{{ domain.fqdn }}.key
+        dest: /etc/nginx/ssl/{{ domain.fqdn }}.key
+        owner: root
+        group: root
+        mode: '0644'
+      when:
+        - hostvars.localhost.key_is_there.stat.exists|bool
+        - hostvars.localhost.cert_is_there.stat.exists|bool
+
+    - name: Generate DH Parameters (2048 bits)
+      openssl_dhparam:
+        path: /etc/nginx/ssl/dhparam.pem
+        size: 2048
+        mode: '0644'
+
+    - name: copy needed files
+      template:
+        src: "../templates/vh/etc/nginx/{{ item }}.j2"
+        dest: "/etc/nginx/{{ item }}"
+      loop: "{{ nginx_files }}"
+
+- name: Configure the sites in the virtual hosting
+  hosts: vh
+  vars_files:
+    - "../vars/domain.yml"
+  
+  tasks:
+    - name: Setup the default site's role
+      include_role:
+        name: nginx_site
+      vars:
+        default_site: "{{ item.value.isdefault }}"
+        site_root: "{{ item.value.root }}"
+        site_name: "{{ item.value.name }}"
+        max_body_size: "{{ item.value.body_size }}"
+        site_domain: "{{ item.value.dname }}"
+        site_filename: "{{ item.key }}"
+      with_dict: "{{ virtual_hosts }}"

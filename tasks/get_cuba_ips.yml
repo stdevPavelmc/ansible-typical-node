@@ -1,0 +1,40 @@
+---
+- name: Check if the LACNIC/Cuba file is there
+  stat:
+    path: /etc/delegated-lacnic.txt
+  register: lacnic
+
+- name: Get the Cuba LACNIC delegations and if not use the local ones
+  block:
+    - name: Get it from the net
+      get_url:
+        url: ftp://ftp.lacnic.net/pub/stats/lacnic/delegated-lacnic-latest
+        dest: /etc/delegated-lacnic.txt
+      when: (not lacnic.stat.exists|bool)
+  rescue:
+    - name: Copy it from the control PC
+      template:
+        src: ../templates/delegated-lacnic.txt.j2
+        dest: /etc/delegated-lacnic.txt
+      when: (not lacnic.stat.exists|bool)
+  
+- name: Check if the Cuba ones are computed
+  stat:
+    path: /etc/ipcuba.txt
+  register: ipcuba
+
+- name: Process the file to obtain the Cuba's ones
+  shell: perl -ne '@f = split/\|/; if ($f[1] eq "CU" && $f[2] eq "ipv4") {printf("%s/%d\n", $f[3], 32-log($f[4])/log(2))}' /etc/delegated-lacnic.txt  > /etc/ipcuba.txt
+  when: (not ipcuba.stat.exists)
+
+- name: Check for the ips on Nginx
+  stat:
+    path: /etc/nginx/snippets/ipcuba.conf
+  register: nginx
+  when: ("vh" in ansible_hostname)
+
+- name: Modify and place it for Nginx
+  shell: cat /etc/ipcuba.txt | sed s/"^"/"allow "/g | sed s/"$"/";"/ > /etc/nginx/snippets/ipcuba.conf && echo "deny all;" >> /etc/nginx/snippets/ipcuba.conf
+  when:
+    - ("vh" in ansible_hostname)
+    - (not nginx.stat.exists)

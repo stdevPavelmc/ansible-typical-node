@@ -1,0 +1,7 @@
+---
+- name: Install nginx latest version on repository
+  package:
+    name:
+      - nginx-full
+      - php7.4-fpm
+    state: present

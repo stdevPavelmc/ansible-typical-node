@@ -1,0 +1,5 @@
+---
+- name: Uninstall nginx
+  package:
+    name: nginx-full
+    state: absent

@@ -1,0 +1,75 @@
+# Pavel Milanes [pavelmc@gamil.com] 2021
+#
+# Target: Generate a self signed certificate on /data/sscert/
+
+---
+- name: Generate a new self-signed certificate
+  hosts: localhost
+  connection: local
+  vars_files:
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Check for cert "{{ my_cert.cert }}"
+      local_action: stat path="{{ my_cert.cert }}"
+      register: stat_cert
+    
+    - name: Check for key "{{ my_cert.key }}"
+      local_action: stat path="{{ my_cert.key }}"
+      register: stat_key
+
+    - name: Generate new cert/key pair?
+      shell: /bin/true
+      when: (( not stat_cert.stat.exists|bool ) or ( not stat_key.stat.exists|bool ))
+      register: do_generate
+
+    - name: Erase previous cert
+      file:
+        path: "{{ my_cert.cert }}"
+        state: absent
+      when:
+        - do_generate.changed|bool
+        - stat_cert.stat.exists|bool
+
+    - name: Erase previous key
+      file:
+        path: "{{ my_cert.key }}"
+        state: absent
+      when:
+        - do_generate.changed|bool
+        - stat_key.stat.exists|bool
+
+    - name: Generate an OpenSSL private key.
+      openssl_privatekey:
+        mode: 0660 
+        path: "{{ my_cert.key }}"
+      when: ( do_generate.changed|bool )
+
+    - name: Generate an OpenSSL CSR.
+      openssl_csr:
+        mode: 0640 
+        path: /tmp/domain.csr
+        privatekey_path: "{{ my_cert.key }}"
+        country_name: "{{ my_cert.country }}"
+        state_or_province_name: "{{ my_cert.state }}"
+        locality_name: "{{ my_cert.city }}"
+        organization_name: "{{ my_cert.organization }}"
+        organizational_unit_name: "{{ my_cert.ou }}"
+        common_name: "{{ my_cert.hostname }}"
+        email_address: "{{ domain_postmaster }}"
+      when: ( do_generate.changed|bool )
+
+    - name: Generate a Self Signed OpenSSL certificate.
+      openssl_certificate:
+        path: "{{ my_cert.cert }}"
+        mode: 0660 
+        privatekey_path: "{{ my_cert.key }}"
+        csr_path: /tmp/domain.csr
+        provider: selfsigned
+      when: ( do_generate.changed|bool )
+
+    - name: Erase temp CSR
+      file:
+        path: /tmp/domain.csr
+        state: absent
+      when: ( do_generate.changed|bool )
