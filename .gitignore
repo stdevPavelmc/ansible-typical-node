@@ -1,0 +1,6 @@
+*.code-workspace
+playbooks/roles/mailad
+data/rainloop-community-latest.zip
+data/sscert/*.key
+data/sscert/*.crt
+playbooks/test.yml
