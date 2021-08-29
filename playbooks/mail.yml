@@ -1,0 +1,67 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: install & configure mailad from a local role
+
+---
+- name: Install MailAD with the user's configuration
+  hosts: mail
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Installation of the mailserver using the mailad role
+      include_role:
+        name: mailad
+      vars:
+        domain_fqdn: "{{ mail.domain  }}"
+        hostname_fqdn: "{{ mail.hostname }}"
+        mailadmin: "{{ mail.mailadmin }}"
+        sysadmins: "{{ mail.sysadmins | default('') }}"
+        alwaysbcc: "{{ mail.copia | default('') }}"
+        message_size: "{{ mail.message_size | default(2) }}"
+        mailbox_size: "{{ mail.default_mailbox_size | default('200M') }}"
+        mynetworks: "{{ mail.mynetworks }}"
+        smarthost: "{{ mail.smarthost | default('') }}"
+        everyone: "{{ mail.everyone | default('') }}"
+        everyone_allow_external_access: "{{ mail.veryone_external_access | default(False) }}"
+        national: "{{ mail.national | default('.cu') }}"
+        # LDAP
+        ldap_host: "{{ samba.host }}"
+        ldap_uri: "ldaps://{{ samba.host }}:636/"
+        ldap_bind: "{{ mail.ldap_bind_user }}"
+        ldap_pass: "{{ ldap_bind_password }}"
+        ldap_base: "{{ mail.ldap_base }}"
+        # SSL
+        ssl_generate: True
+        ssl_country: "{{ my_cert.country }}"
+        ssl_state: "{{ my_cert.state }}"
+        ssl_city: "{{ my_cert.city }}"
+        ssl_enterprise: "{{ my_cert.organization }}"
+        ssl_ou: "{{ my_cert.ou }}"
+        ssl_hostname: "{{ my_cert.hostname }}"
+        ssl_cert_local: "{{ my_cert.cert }}"
+        ssl_key_local: "{{ my_cert.key }}"
+        # DNSBL settings
+        dnsbl_enable: "{{ mail.dnsbl_enable | default(False) }}"
+        dnsbl_list: "{{ mail.dnsbl_list | default('') }}"
+        # Content filtering options
+        spf_enable: "{{ mail.spf_enable | default(False) }}"
+        spamd_enable: "{{ mail.spamd_enable | default(False) }}"
+        av_enable: "{{ mail.av_enable | default(False) }}"
+        av_use_alternate_mirror: "{{ mail.av_use_alternate_mirror | default(True) }}"
+        av_alternate_mirror: "{{ mail.av_alternate_mirror | default('') }}"
+        dovecot_master_spam_filter: "{{ mail.dovecot_master_spam_filter | default(True) }}"
+        # proxy settings
+        use_proxy: "{{ mail.use_proxy | default('') }}"
+        proxy_user: "{{ mail.proxy_user | default('') }}"
+        proxy_pass: "{{ mail.proxy_pass | default('') }}"
+        proxy_host: "{{ mail.proxy_host | default('') }}"
+        proxy_port: "{{ mail.proxy_port | default('') }}"
+        # others
+        #disclaimer_enable: "{{ mail.disclaimer_enable | default(False) }}"
+        #disclaimer_reach_locals: "{{ mail.disclaimer_reach_locals | default('') }}"
+        maildir_removal: "{{ mail.maildir_removal | default('False') }}"
+        statistics_enable: "{{ mail.statistics_enable | default(True) }}"
+        host_on_internet: "{{ mail.host_on_internet | default('') }}"
