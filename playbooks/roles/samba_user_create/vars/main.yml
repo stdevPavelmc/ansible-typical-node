@@ -3,8 +3,8 @@
 
 username: pavel
 password: very_good_password
-givenname: Pavel
-surname: Milanes Costa
-email: pavelmc@example.com
-ou: ""
+givenname:
+surname:
+email:
+ou:
 description: "Created by Ansible"
