@@ -1,9 +1,9 @@
-# Pavel Milanes [pavelmc@gamil.com] 2021
+# Pavel Milanes [pavelmc@gmail.com] 2021
 #
 # Target: Force re-generation a self signed certificate on ../data/sscert/
 
 ---
-- name: Generate a new self-signed certificate
+- name: Erase certs/keys if there to force generation
   hosts: localhost
   connection: local
   vars_files:
@@ -30,4 +30,7 @@
         state: absent
       when: stat_key.stat.exists|bool
 
-    - include: gen_ss_certs.yml
+# now we can generate the key/certs
+- name: Generate new certs/key
+  import_playbook: gen_ss_certs.yml
+  
