@@ -1,4 +1,4 @@
-# Pavel Milanes [pavelmc@gamil.com] 2021
+# Pavel Milanes [pavelmc@gmail.com] 2021
 #
 # Target: Create the samba4 domain users
 #
@@ -30,11 +30,17 @@
     - "../vars/domain.yml"
 
   tasks:
+    - name: Creation of base OU
+      include_role:
+        name: samba_ou_create
+      vars:
+        ou: "OU={{ samba.base_ou }}"
+
     - name: Creation of OUs
       include_role:
         name: samba_ou_create
       vars:
-        ou: "OU={{ item }},OU={{ samba_base_ou }}"
+        ou: "OU={{ item }},OU={{ samba.base_ou }}"
       with_items:
         - "{{ hostvars['localhost']['domain_ous'].stdout_lines }}"
 
@@ -46,7 +52,7 @@
     - "../vars/domain.yml"
 
   tasks:
-    - name: Creation of users
+    - name: Creation of domain users
       include_role:
         name: samba_user_create
       vars:
@@ -54,26 +60,15 @@
           password: "{{ domain_users_default_password }}"
           givenname: "{{ item.givenname }}"
           surname: "{{ item.surname }}"
-          email: "{{ item.username }}@{{ domain_email_domain }}"
-          ou: "OU={{ item.ou }},OU={{ samba_base_ou }}"
+          email: "{{ item.username }}@{{ domain.fqdn }}"
+          ou: "OU={{ item.ou }},OU={{ samba.base_ou }}"
           description: "Created by Ansible"
       loop: "{{ hostvars['localhost']['userlist'].list }}"
 
-- name: Create the Linux link user
-  hosts: dc
-  remote_user: root
-  vars_files:
-    - "../vars/secrets.yml"
-    - "../vars/mail.yml"
-
-  tasks:
-    - name: Creation Linux user
+    - name: Creation of the Linux user
       include_role:
         name: samba_user_create
       vars:
-          username: "{{ ma_username }}"
-          password: "{{ ma_ldap_bind_password }}"
-          givenname: "{{ ma_givenname }}"
-          surname: "{{ ma_surname }}"
-          email: "fake@example.com"
+          username: "{{ samba.link.user }}"
+          password: "{{ ldap_bind_password }}"
           description: "Created by Ansible"
