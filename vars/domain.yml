@@ -105,7 +105,6 @@ mail:
   # statistics_enable: True
   # host_on_internet: False
 
-
 virtual_hosts:
   default:
     isdefault: True
@@ -125,3 +124,24 @@ virtual_hosts:
     name: wwww
     body_size: 2M
     dname: "{{ domain.fqdn }}"
+
+# file server details
+fileserver:
+  packages:
+    - samba
+    - krb5-user
+    - winbind
+    - libnss-winbind
+    - libpam-winbind
+    - resolvconf
+  services:
+    - nmbd
+    - smbd
+    - winbind
+  shares:
+    - name: almacen
+      path: /samba/almacen
+      comment: Almacenamiento de ficheros
+    - name: profiles
+      path: /samba/profiles
+      comment: Profiles
