@@ -7,12 +7,21 @@
   hosts: localhost
   vars_files:
     - "../vars/vh.yml"
+  vars:
+    rainloop_download_url: https://www.rainloop.net/repository/webmail/rainloop-community-latest.zip
 
   tasks:
     - name: Check if the local install is there
       stat:
         path: "../data/{{ rainloop.local }}"
       register: rainloop_local_install
+
+    - name: Download the rainloop install to local if not there
+      get_url:
+        dest: ../data/rainloop-community-latest.zip
+        force: yes
+        url: rainloop_download_url
+      when: not rainloop_local_install.stat.exists|bool
 
 - name: Install rainloop webmail 
   hosts: vh
