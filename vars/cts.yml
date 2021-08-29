@@ -25,7 +25,7 @@ defaults:
   template: 'local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz'
   bridge: vmbr0
   storale: local
-  dns: "192.168.0.4"
+  dns: "10.0.3.4"
   unprivileged: 1
   onboot: 1
   timezone: "America/Havana"
@@ -37,22 +37,24 @@ cts:
   #   id: 101
   #   ip: "192.168.0.3"
   #   dns: "192.168.0.3"
-  # dc:
-  #   id: 102
-  #   ip: "192.168.0.4"
-  #   dns: "192.168.0.4"
-  #   unprivileged: 0
+  dc:
+    id: 102
+    ip: "192.168.0.4"
+    dns: "192.168.0.4"
+    unprivileged: 0
   mail:
     id: 103
-    ip: "10.0.3.3"
-    dns: "10.0.3.1"
+    ip: "192.168.0.5"
+    dns: "192.168.0.3"
     memory: 2048
     swap: 1024
-  # vh:
-  #   id: 104
-  #   ip: "192.168.0.6"
-  #   memory: 2048
-  #   swap: 1024
-  # file:
-  #   id: 105
-  #   ip: "192.168.0.7"
+  vh:
+    id: 104
+    ip: "192.168.0.6"
+    memory: 2048
+    swap: 1024
+  fileserver:
+    id: 105
+    ip: "192.168.0.7"
+    memory: 2048
+    swap: 1024
