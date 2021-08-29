@@ -1,0 +1,16 @@
+---
+
+- name: Test the site handling for nginx
+  hosts: vh
+  remote_user: root
+
+  tasks:
+    - name: Setup the default site's role
+      include_role:
+        name: nginx_site
+      vars:
+        default_site: True
+        site_root: /var/www/html/
+        site_name: vh
+        site_filename: default
+        site_domain: lxc.cu

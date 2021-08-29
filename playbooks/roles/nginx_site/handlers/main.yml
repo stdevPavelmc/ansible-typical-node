@@ -1,0 +1,13 @@
+---
+# handlers file for nginx_site
+
+# 
+- name: Nginx test
+  command: /usr/sbin/nginx -t
+  notify: Nginx restart
+  changed_when: False
+
+- name: Nginx restart
+  service:
+    name: nginx
+    state: restarted
