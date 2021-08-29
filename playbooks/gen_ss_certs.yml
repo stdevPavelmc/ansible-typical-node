@@ -1,6 +1,6 @@
-# Pavel Milanes [pavelmc@gamil.com] 2021
+# Pavel Milanes [pavelmc@gmail.com] 2021
 #
-# Target: Generate a self signed certificate on /data/sscert/
+# Target: Generate a self signed certificate on ../data/sscert/
 
 ---
 - name: Generate a new self-signed certificate
@@ -56,7 +56,7 @@
         organization_name: "{{ my_cert.organization }}"
         organizational_unit_name: "{{ my_cert.ou }}"
         common_name: "{{ my_cert.hostname }}"
-        email_address: "{{ domain_postmaster }}"
+        email_address: "{{ domain.postmaster }}"
       when: ( do_generate.changed|bool )
 
     - name: Generate a Self Signed OpenSSL certificate.
