@@ -9,4 +9,34 @@
 
 - name: Create the user only if not present on the system
   shell: samba-tool user create "{{ username }}" "{{ password }}" --given-name="{{ givenname }}" --surname="{{ surname }}" --mail-address="{{ email }}" --userou="{{ ou }}" --description="Created by Ansible"
-  when: 'username not in users_list.stdout_lines'
+  when:
+    - (username not in users_list.stdout_lines)
+    - (givenname|bool)
+    - (surname|bool)
+    - (email|bool)
+
+- name: Create the user only if not present on the system
+  shell: samba-tool user create "{{ username }}" "{{ password }}" --given-name="{{ givenname }}" --mail-address="{{ email }}" --userou="{{ ou }}" --description="Created by Ansible"
+  when:
+    - (username not in users_list.stdout_lines)
+    - (givenname|bool)
+    - (not surname|bool)
+    - (email|bool)
+
+- name: Create the user only if not present on the system
+  shell: samba-tool user create "{{ username }}" "{{ password }}" --mail-address="{{ email }}" --userou="{{ ou }}" --description="Created by Ansible"
+  when:
+    - (username not in users_list.stdout_lines)
+    - (not givenname|bool)
+    - (not surname|bool)
+    - (email|bool)
+
+- name: Create the user only if not present on the system
+  shell: samba-tool user create "{{ username }}" "{{ password }}" --userou="{{ ou }}" --description="Created by Ansible"
+  when:
+    - (username not in users_list.stdout_lines)
+    - (not givenname|bool)
+    - (not surname|bool)
+    - (not email|bool)
+
+    
