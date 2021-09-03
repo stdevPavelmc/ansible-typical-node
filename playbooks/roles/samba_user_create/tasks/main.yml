@@ -48,7 +48,7 @@
     - (not surname|bool)
     - (not department|bool)
 
-- name: Create the user only if not present on the system
+- name: Create the user [ name, ou ]
   shell: samba-tool user create "{{ username }}" "{{ password }}" --userou="{{ ou }}" --description="Created by Ansible"
   when:
     - (username not in users_list.stdout_lines)
