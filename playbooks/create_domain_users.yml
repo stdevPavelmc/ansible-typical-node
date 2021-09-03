@@ -56,13 +56,14 @@
       include_role:
         name: samba_user_create
       vars:
-          username: "{{ item.username }}"
+          username: "{{ item.username.split(' ')[0] }}"
           password: "{{ domain_users_default_password }}"
           givenname: "{{ item.givenname }}"
           surname: "{{ item.surname }}"
-          email: "{{ item.username }}@{{ domain.fqdn }}"
+          email: "{{ item.username.split(' ')[0] }}@{{ domain.fqdn }}"
           ou: "OU={{ item.ou }},OU={{ samba.base_ou }}"
           description: "Created by Ansible"
+          department: "{{ item.ou }}"
       loop: "{{ hostvars['localhost']['userlist'].list }}"
 
     - name: Creation of the Linux user
@@ -71,4 +72,5 @@
       vars:
           username: "{{ samba.link.user }}"
           password: "{{ ldap_bind_password }}"
+          ou: "CN=Users"
           description: "Created by Ansible"
