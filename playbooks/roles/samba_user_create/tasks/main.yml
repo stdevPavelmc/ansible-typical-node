@@ -16,43 +16,43 @@
   shell: samba-tool user create "{{ username }}" "{{ password }}" --given-name="{{ givenname }}" --surname="{{ surname }}" --mail-address="{{ email }}" --userou="{{ ou }}" --department="{{ department }}" --description="Created by Ansible"
   when:
     - (username not in users_list.stdout_lines)
-    - (givenname|bool)
-    - (surname|bool)
-    - (email|bool)
-    - (department|bool)
+    - (givenname|length != 0)
+    - (surname|length != 0)
+    - (email|length != 0)
+    - (department|length != 0)
 
 - name: Create the user [ name, givenname, surname, email, ou ]
   shell: samba-tool user create "{{ username }}" "{{ password }}" --given-name="{{ givenname }}" --surname="{{ surname }}" --mail-address="{{ email }}" --userou="{{ ou }}" --description="Created by Ansible"
   when:
     - (username not in users_list.stdout_lines)
-    - (givenname|bool)
-    - (surname|bool)
-    - (email|bool)
-    - (not department|bool)
+    - (givenname|length != 0)
+    - (surname|length != 0)
+    - (email|length != 0)
+    - (not department|length != 0)
 
 - name: Create the user [ name, givenname, email, ou ]
   shell: samba-tool user create "{{ username }}" "{{ password }}" --given-name="{{ givenname }}" --mail-address="{{ email }}" --userou="{{ ou }}" --description="Created by Ansible"
   when:
     - (username not in users_list.stdout_lines)
-    - (givenname|bool)
-    - (email|bool)
-    - (not surname|bool)
-    - (not department|bool)
+    - (givenname|length != 0)
+    - (email|length != 0)
+    - (not surname|length != 0)
+    - (not department|length != 0)
 
 - name: Create the user [ name, email, ou ]
   shell: samba-tool user create "{{ username }}" "{{ password }}" --mail-address="{{ email }}" --userou="{{ ou }}" --description="Created by Ansible"
   when:
     - (username not in users_list.stdout_lines)
-    - (email|bool)
-    - (not givenname|bool)
-    - (not surname|bool)
-    - (not department|bool)
+    - (email|length != 0)
+    - (not givenname|length != 0)
+    - (not surname|length != 0)
+    - (not department|length != 0)
 
 - name: Create the user [ name, ou ]
   shell: samba-tool user create "{{ username }}" "{{ password }}" --userou="{{ ou }}" --description="Created by Ansible"
   when:
     - (username not in users_list.stdout_lines)
-    - (not givenname|bool)
-    - (not surname|bool)
-    - (not email|bool)
-    - (not department|bool)
+    - (not givenname|length != 0)
+    - (not surname|length != 0)
+    - (not email|length != 0)
+    - (not department|length != 0)
