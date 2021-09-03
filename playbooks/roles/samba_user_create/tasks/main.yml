@@ -1,35 +1,52 @@
 ---
 # tasks file for samba_user_create
 
+- name: Fail safe check
+  fail:
+    msg: "You need to pass at least the 'username', 'password' and the 'OU' where you want to create the user"
+  when: ((username|length == 0) or (password|length == 0) or (ou|length == 0))
+
 - name: Check if the user is there already
   shell: samba-tool user list
   register: users_list
   changed_when: False
   failed_when: False 
 
-- name: Create the user only if not present on the system
+- name: Create the user [ name, givenname, surname, email, ou, department ]
+  shell: samba-tool user create "{{ username }}" "{{ password }}" --given-name="{{ givenname }}" --surname="{{ surname }}" --mail-address="{{ email }}" --userou="{{ ou }}" --department="{{ department }}" --description="Created by Ansible"
+  when:
+    - (username not in users_list.stdout_lines)
+    - (givenname|bool)
+    - (surname|bool)
+    - (email|bool)
+    - (department|bool)
+
+- name: Create the user [ name, givenname, surname, email, ou ]
   shell: samba-tool user create "{{ username }}" "{{ password }}" --given-name="{{ givenname }}" --surname="{{ surname }}" --mail-address="{{ email }}" --userou="{{ ou }}" --description="Created by Ansible"
   when:
     - (username not in users_list.stdout_lines)
     - (givenname|bool)
     - (surname|bool)
     - (email|bool)
+    - (not department|bool)
 
-- name: Create the user only if not present on the system
+- name: Create the user [ name, givenname, email, ou ]
   shell: samba-tool user create "{{ username }}" "{{ password }}" --given-name="{{ givenname }}" --mail-address="{{ email }}" --userou="{{ ou }}" --description="Created by Ansible"
   when:
     - (username not in users_list.stdout_lines)
     - (givenname|bool)
-    - (not surname|bool)
     - (email|bool)
+    - (not surname|bool)
+    - (not department|bool)
 
-- name: Create the user only if not present on the system
+- name: Create the user [ name, email, ou ]
   shell: samba-tool user create "{{ username }}" "{{ password }}" --mail-address="{{ email }}" --userou="{{ ou }}" --description="Created by Ansible"
   when:
     - (username not in users_list.stdout_lines)
+    - (email|bool)
     - (not givenname|bool)
     - (not surname|bool)
-    - (email|bool)
+    - (not department|bool)
 
 - name: Create the user only if not present on the system
   shell: samba-tool user create "{{ username }}" "{{ password }}" --userou="{{ ou }}" --description="Created by Ansible"
@@ -38,5 +55,4 @@
     - (not givenname|bool)
     - (not surname|bool)
     - (not email|bool)
-
-    
+    - (not department|bool)
