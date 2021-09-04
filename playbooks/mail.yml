@@ -65,3 +65,42 @@
         maildir_removal: "{{ mail.maildir_removal | default('False') }}"
         statistics_enable: "{{ mail.statistics_enable | default(True) }}"
         host_on_internet: "{{ mail.host_on_internet | default('') }}"
+
+- name: Create the DNS entries related to this service
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Create the A record for the mail server
+      include_role:
+        name: samba_dns_actions
+      vars:
+        action: add
+        server: "{{ samba.host }}"
+        zone: "{{ domain.fqdn }}"
+        name: "mail"
+        type: "A"
+        data: "{{ hostvars['mail'].ansible_host }}"
+        user: Administrator
+        password: "{{ samba_adminpass }}"
+
+    - name: Create the CNAME records for the MUA to find it
+      include_role:
+        name: samba_dns_actions
+      vars:
+        action: add
+        server: "{{ samba.host }}"
+        zone: "{{ domain.fqdn }}"
+        name: "{{ item }}"
+        type: "CNAME"
+        data: "{{ hostvars['mail'].ansible_host }}"
+        user: Administrator
+        password: "{{ samba_adminpass }}"
+      loop:
+        - smtp
+        - pop
+        - pop3
+        - imap
