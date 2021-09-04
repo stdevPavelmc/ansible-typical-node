@@ -98,3 +98,39 @@
         site_domain: "{{ item.value.dname }}"
         site_filename: "{{ item.key }}"
       with_dict: "{{ virtual_hosts }}"
+
+- name: Create the DNS entries related to this service
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Create the A record for the vh server
+      include_role:
+        name: samba_dns_actions
+      vars:
+        action: add
+        server: "{{ samba.host }}"
+        zone: "{{ domain.fqdn }}"
+        name: "vh"
+        type: "A"
+        data: "{{ hostvars['vh'].ansible_host }}"
+        user: Administrator
+        password: "{{ samba_adminpass }}"
+
+    - name: Create the CNAME records for the sites
+      include_role:
+        name: samba_dns_actions
+      vars:
+        action: add
+        server: "{{ samba.host }}"
+        zone: "{{ domain.fqdn }}"
+        name: "{{ item.key }}"
+        type: "CNAME"
+        data: "{{ hostvars['vh'].ansible_host }}"
+        user: Administrator
+        password: "{{ samba_adminpass }}"
+      when: ( item.key == item.value.name )
+      with_dict: "{{ virtual_hosts }}"
