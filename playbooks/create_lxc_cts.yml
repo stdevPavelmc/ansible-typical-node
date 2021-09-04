@@ -25,6 +25,7 @@
       package:
         name: python3-lxc
         state: present
+      tags: dependency
 
     - name: Install by downloading the template
       community.general.lxc_container:
@@ -35,16 +36,25 @@
       with_dict: "{{ cts }}"
       loop_control:
         pause: 5
-      register: created_cts_lxc
+      tags: install
+
+    - name: debug
+      debug:
+        msg: "{{ item }}"
+      with_items: "{{ cts }}"
+      tags: post
 
     - name: Install openssh in the CTs
-      shell: echo "apt install openssh-server -y" | lxc-attach --name="{{ item.item.key }}" -- 
-      with_items: "{{ created_cts_lxc.results }}"
+      shell: echo "apt install openssh-server -y" | lxc-attach --name="{{ item }}" -- 
+      with_items: "{{ cts }}"
+      tags: post
 
     - name: Copy controllers pubkey to the nodes
-      shell: echo "mkdir -p /root/.ssh && echo '{{ api_pubkey }}' > /root/.ssh/authorized_keys" | lxc-attach --name="{{ item.item.key }}" -- 
-      with_items: "{{ created_cts_lxc.results }}"
+      shell: echo "mkdir -p /root/.ssh && echo '{{ api_pubkey }}' > /root/.ssh/authorized_keys" | lxc-attach --name="{{ item }}" -- 
+      with_items: "{{ cts }}"
+      tags: post
 
     - name: Set correct timezone on the nodes
-      shell: echo "timedatectl set-timezone {{ defaults.timezone }}" | lxc-attach --name="{{ item.item.key }}" -- 
-      with_items: "{{ created_cts_lxc.results }}"
+      shell: echo "timedatectl set-timezone {{ defaults.timezone }}" | lxc-attach --name="{{ item }}" -- 
+      with_items: "{{ cts }}"
+      tags: post
