@@ -1,0 +1,180 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: install & configure an Ejabberd server linked to the domain
+
+---
+
+- name: Check if the certs to supply to the host is there
+  hosts: localhost
+  vars_files:
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Cert file is there
+      stat:
+        path: ../data/sscert/{{ domain.fqdn }}.crt
+      register: cert_is_there
+      tags: test
+
+    - name: Key file is there
+      stat:
+        path: ../data/sscert/{{ domain.fqdn }}.crt
+      register: key_is_there
+      tags: test
+
+
+- name: Install the ejabberd XMPP server and configure it for LDAP auth
+  hosts: jb
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+    - "../vars/jabber.yml"
+
+  tasks:
+    - name: Fail if not local cert present
+      fail:
+        msg: There is no local cert & key to setup, please re-generate them or use a Let's Encript One
+      when: ( not hostvars.localhost.key_is_there.stat.exists|bool or not hostvars.localhost.cert_is_there.stat.exists|bool )
+      tags: test
+
+    - name: Install ejabberd...
+      package:
+        name: "{{ pkgs }}"
+        state: present
+      tags: install
+
+    - name: Check for ssl folder
+      stat:
+        path: /etc/ejabberd/cert/
+      register: ssl_folder
+      tags: ssl
+
+    - name: Create ssl folder if needed
+      file:
+        path: /etc/ejabberd/cert/
+        state: directory
+        mode: 0755
+        group: root
+        owner: root
+      when: ( not ssl_folder.stat.exists|bool )
+      tags: ssl
+
+    - name: Copy certs
+      template:
+        src: ../data/sscert/{{ domain.fqdn }}.crt
+        dest: /etc/ejabberd/cert/{{ domain.fqdn }}.crt
+        owner: root
+        group: root
+        mode: '0644'
+      when:
+        - hostvars.localhost.key_is_there.stat.exists|bool
+        - hostvars.localhost.cert_is_there.stat.exists|bool
+        - not my_cert.selfsigned|bool
+      tags: ssl
+        
+    - name: Copy key
+      template:
+        src: ../data/sscert/{{ domain.fqdn }}.key
+        dest: /etc/ejabberd/cert/{{ domain.fqdn }}.key
+        owner: root
+        group: root
+        mode: '0644'
+      when:
+        - hostvars.localhost.key_is_there.stat.exists|bool
+        - hostvars.localhost.cert_is_there.stat.exists|bool
+        - not my_cert.selfsigned|bool
+      tags: ssl
+
+    - name: Check if we have the LDAP cert in place already
+      stat:
+        path: /etc/ejabberd/cert/ldap.pem
+      register: ldap_cert
+      tags: ssl
+
+    - name: Retrieve the AD cert and put in on local storage if needed
+      shell: echo | openssl s_client -connect {{ samba.host }}:636 2>&1 | sed --quiet '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/ejabberd/cert/ldap.pem
+      when: (not ldap_cert.stat.exists|bool)
+      changed_when: False
+      tags: ssl
+
+    - name: Generate DH Parameters (2048 bits)
+      openssl_dhparam:
+        path: /etc/ejabberd/cert/dh2048.pem
+        size: 2048
+        mode: '0644'
+      tags: ssl
+    
+    - name: Copy the template of the config
+      template:
+        src: "../templates/jb/etc/ejabberd/ejabberd.yml.j2"
+        dest: "/etc/ejabberd/ejabberd.yml"
+        owner: ejabberd
+        group: ejabberd
+        mode: 0600
+        force: True
+      tags: config
+         
+    - name: Restart the service
+      ansible.builtin.systemd:
+        name: ejabberd
+        enabled: yes
+        masked: no
+        state: restarted
+      tags: restart
+      changed_when: False
+
+- name: Create the DNS entries related to this service
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+    - "../vars/jabber.yml"
+
+  tasks:
+    - name: Create the A record for the jb server
+      include_role:
+        name: samba_dns_actions
+      vars:
+        action: add
+        server: "{{ samba.host }}"
+        zone: "{{ domain.fqdn }}"
+        name: "jb"
+        type: "A"
+        data: "{{ hostvars['jb'].ansible_host }}"
+        user: Administrator
+        password: "{{ samba_adminpass }}"
+      tags: dns
+
+    - name: Create the client SRV record for the jb server
+      include_role:
+        name: samba_dns_actions
+      vars:
+        action: add
+        server: "{{ samba.host }}"
+        zone: "{{ domain.fqdn }}"
+        name: "_xmpp-client._tcp"
+        type: "SRV"
+        data: "{{ hostvars['jb'].ansible_host }} 5222 10 1"
+        user: Administrator
+        password: "{{ samba_adminpass }}"
+      tags: dns
+
+    - name: Create the server SRV record for the jb server
+      include_role:
+        name: samba_dns_actions
+      vars:
+        action: add
+        server: "{{ samba.host }}"
+        zone: "{{ domain.fqdn }}"
+        name: "_xmpp-server._tcp"
+        type: "SRV"
+        data: "{{ hostvars['jb'].ansible_host }} 5269 10 1"
+        user: Administrator
+        password: "{{ samba_adminpass }}"
+      tags: dns
+
+
+
+    

@@ -1,0 +1,6 @@
+# variables for the jabber configurations
+
+pkgs:
+  - ejabberd
+  - ejabberd-contrib
+  - erlang-eldap
