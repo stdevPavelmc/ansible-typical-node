@@ -1,0 +1,18 @@
+---
+# vars file for samba_ou_create
+
+# action add|delete
+action: add
+# server to apply the action to
+server: localhost
+# fqdn of the zone
+zone: lxc.cu
+# item to modify
+name: localhost
+# type of the record: A|AAAA|PTR|CNAME|NS|MX|SRV|TXT
+type: A
+# data or argument, usually the IP
+data: 127.0.0.1
+# credentials
+user: Administrator
+passwowd: ''
