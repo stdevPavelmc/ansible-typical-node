@@ -122,13 +122,14 @@
         state: restarted
       when:
         - domtest.rc|int != 0
-        - joined.rc|int != 0\
+        - joined.rc|int != 0
 
     - name: Create shares folders
       file:
         path: "{{ item.path }}"
         mode: 0775
-        owner: "{{ samba.netbios }}\\Domain admins"
-        group: "{{ samba.netbios }}\\Domain users"
+        # owner: "{{ samba.netbios }}\\Administrator"
+        # group: "{{ samba.netbios }}\\Domain users"
         state: directory
       loop: "{{ fileserver.shares }}"
+ 
