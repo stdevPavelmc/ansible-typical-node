@@ -1,0 +1,28 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: Start al local LXC CTs
+
+---
+- name: Create a new CT
+  hosts: localhost
+  connection: local
+  become: True
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/cts.yml"
+
+  tasks:
+    - name: Install python3-lxc
+      package:
+        name: python3-lxc
+        state: present
+      tags: dependency
+
+    - name: Start all local, LXC CTs
+      community.general.lxc_container:
+        name: "{{ item.key }}"
+        state: started
+      with_dict: "{{ cts }}"
+      loop_control:
+        pause: 5
+      tags: install
