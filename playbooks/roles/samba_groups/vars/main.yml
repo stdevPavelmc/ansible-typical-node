@@ -1,0 +1,24 @@
+---
+# vars file for samba_groups
+
+# Available subcommands:
+#   add            - Creates a new AD group.
+#   addmembers     - Add members to an AD group.
+#   delete         - Deletes an AD group.
+#   edit           - Modify Group AD object.
+#   list           - List all groups.
+#   listmembers    - List all members of an AD group.
+#   move           - Move a group to an organizational unit/container.
+#   removemembers  - Remove members from an AD group.
+#   show           - Display a group AD object.
+#   stats          - Summary statistics about group memberships.
+
+# command
+action: ''
+group: ''
+users: ''
+group_mail: ''
+description: 'Created by Ansible'
+group_ou: ''
+auth_user: administrator
+password: ''
