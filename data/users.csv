@@ -1,2 +1,57 @@
-givenname,surname,username,ou
-Pavel,Milanes,pavelmc,Informática
+givenname,surname,username,ou,proxy,mail
+Sandra,Sanchez González,sandra.sanchez,Auditoría,Normal,Nacional
+Yanelkis,Lastre Nápolez,yanelkis.lastre,Auditoría,Normal,Nacional
+Yailenes,Mejias Santana,yailenes.mejias,Auditoría,Normal,Nacional
+Naivi,Sanchez Rivero,naivi.sanchez,Auditoría,Normal,Nacional
+Eodalsis,Manzo Oquendo,eodalsis.manzo,Contabilidad,Normal,Nacional
+Reyna,Castellanos Sanchez,reyna.castellanos,Contabilidad,Normal,Nacional
+Yulier,Aguilar Peña,yulier.aguilar,Contabilidad,Normal,Nacional
+Armando,Fernández Betancourt,armando.fernandez,Contabilidad,Normal,Nacional
+Yamisleydi,Barrios Aguilar,yamisleydi.barrios,Contabilidad,Normal,Nacional
+Marianela,Martinez de Santelice,marianela.martinez,Contabilidad,Normal,Nacional
+Yisleidys,De la Vega Serrano,yisleidys.de la vega,Contabilidad,Normal,Nacional
+Josefa,Geijo Del Val,josefa.geijo,Contabilidad,Normal,Nacional
+Valentina,Rondon Palomino,valentina.rondon,Contabilidad,Normal,Nacional
+Liudmila,González Canto,liudmila.gonzales,Contabilidad,Normal,Nacional
+Bárbara,Castellano Álvarez,barbara.castellano,Planificación,Normal,Nacional
+Kety,Gomez Diaz,kety.gomez,Planificación,Normal,Nacional
+Iraida,Moronta Dominguez,iraida.moronta,Planificación,Normal,Nacional
+Yorgenis,Gomez Suarez,yorgenis.gomez,Planificación,Normal,Nacional
+Iraida,Hovez Olivera,iraida.hovez,Planificación,Normal,Nacional
+Mayda,Reyes Carbonell,mayda.reyes,Control Interno,Normal,Nacional
+Maciel,Ramirez Guerra,maciel.ramirez,Control Interno,Normal,Nacional
+Alvio,Rodríguez De la Rosa,alvio.ramirez,Control Interno,Normal,Nacional
+Jose,Moran Perez,jose.moran,D. Organización,Normal,Nacional
+Hector,Armengol Garcia,hector.armengol,D. Organización,Normal,Nacional
+Anitzia,Martinez Guerra,anitzia.martinez,D. Organización,Normal,Nacional
+Adelaida,Millares López,adelaida.millares,D. Organización,Normal,Nacional
+Oreste,Mevil Dumey,oreste.mevil,D. Organización,Vip,Internacional
+Yasser,Basulto Taylor,yasser.basulto,D. Organización,Normal,Nacional
+Dixsan,Rojas Cruz,dixsan.rojas,Dirección,Vip,Internacional
+Marlene,Lillo Fernandez,marlene.lillo,Dirección,Normal,Nacional
+Yordanka,Peña Mejias,yordanka.peña,Dirección,Normal,Nacional
+Arletys,Lopez Romero,arletys.lopez,Dirección,Normal,Nacional
+Yanet,Rodríguez Borego,yanet.rodriguez,Dirección,Normal,Nacional
+Yanela,Perez Perez,yanela.perez,Dirección,Normal,Nacional
+Betsy,de Armas Martínez,betsy.de armas,Dirección,Normal,Nacional
+Yailin,Gonzalez Puente,yailin.gonzalez,Dirección,Normal,Nacional
+Ismary,Machado Moreno,ismary.machado,Dirección,Normal,Nacional
+Jorge,Calero Macias,jorge.calero,Dirección,Normal,Nacional
+Ana,Viamontes Romero,ana.viamontes,Dpto. Técnico,Normal,Nacional
+Marcia,Fernández Díaz,marcia.fernandez,Dpto. Técnico,Normal,Nacional
+Yausmira,Hernández Peréz,yausmira.hernandez,Dpto. Técnico,Normal,Nacional
+Ailet,Sosa Exposito,ailet.sosa,Dpto. Técnico,Normal,Nacional
+Taimi,Zarria Licea,taimi.zarria,Dpto. Técnico,Normal,Nacional
+Yoandra,Fernández Hechevarria,yoandra.fernandez,Dpto. Técnico,Normal,Nacional
+Taymira,Reyes Gómez,taymira.reyes,Dpto. Técnico,Normal,Nacional
+Alexander,Padron Echevarria,alexander.padron,Dpto. Técnico,Normal,Nacional
+Francisco,Debesa Garcia,francisco.debesa,Dpto. Técnico,Normal,Nacional
+Dainelis,Trumbull Alfonso,dainelis.trumbull,Dpto. Técnico,Normal,Nacional
+Diana,Yi Sarduy,diana.yi,Capital Humano,Normal,Nacional
+Rafael,Gordo Delgado,rafael.gordo,Capital Humano,Normal,Nacional
+Yanet,Quintana Esquivel,yanet.quintana,Capital Humano,Normal,Nacional
+Ana,Torres Rodríguez,ana.torres,Capital Humano,Normal,Nacional
+Maria,Rodríguez Pardo,maria.rodriguez,Capital Humano,Normal,Nacional
+Flora,Valdés Mestre,flora.valdez,Capital Humano,Normal,Nacional
+Carmen,Perez González,carmen.perez,Capital Humano,Normal,Nacional
+Pavel,Milanes,pavelmc,Informática,Vip,Internacional
