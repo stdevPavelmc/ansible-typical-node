@@ -27,6 +27,7 @@
   hosts: dc
   remote_user: root
   vars_files:
+    - "../vars/secrets.yml"
     - "../vars/domain.yml"
 
   tasks:
@@ -44,33 +45,48 @@
       with_items:
         - "{{ hostvars['localhost']['domain_ous'].stdout_lines }}"
 
-- name: Create the Users on the domain
-  hosts: dc
-  remote_user: root
-  vars_files:
-    - "../vars/secrets.yml"
-    - "../vars/domain.yml"
-
-  tasks:
     - name: Creation of domain users
       include_role:
         name: samba_user_create
       vars:
-          username: "{{ item.username.split(' ')[0] }}"
-          password: "{{ domain_users_default_password }}"
-          givenname: "{{ item.givenname }}"
-          surname: "{{ item.surname }}"
-          email: "{{ item.username.split(' ')[0] }}@{{ domain.fqdn }}"
-          ou: "OU={{ item.ou }},OU={{ samba.base_ou }}"
-          description: "Created by Ansible"
-          department: "{{ item.ou }}"
+        username: "{{ item.username.split(' ')[0] }}"
+        password: "{{ domain_users_default_password }}"
+        givenname: "{{ item.givenname }}"
+        surname: "{{ item.surname }}"
+        email: "{{ item.username.split(' ')[0] }}@{{ domain.fqdn }}"
+        ou: "OU={{ item.ou }},OU={{ samba.base_ou }}"
+        description: "Created by Ansible"
+        department: "{{ item.ou }}"
       loop: "{{ hostvars['localhost']['userlist'].list }}"
 
     - name: Creation of the Linux user
       include_role:
         name: samba_user_create
       vars:
-          username: "{{ samba.link.user }}"
-          password: "{{ ldap_bind_password }}"
-          ou: "CN=Users"
-          description: "Created by Ansible"
+        username: "{{ samba.link.user }}"
+        password: "{{ ldap_bind_password }}"
+        ou: "CN=Users"
+        description: "Created by Ansible"
+
+    - name: Creation of groups inside the OUs
+      include_role:
+        name: samba_groups
+      vars:
+        action: add
+        group: "{{ item }}"
+        description: 'Created by Ansible'
+        group_ou: "OU={{ item }},OU={{ samba.base_ou }}"
+        auth_user: administrator
+        password: "{{ samba_adminpass }}"
+      loop: "{{ hostvars['localhost']['domain_ous'].stdout_lines }}"
+
+    - name: Add users to the respective groups
+      include_role:
+        name: samba_groups
+      vars:
+        action: addmembers
+        group: "{{ item.ou }}"
+        users: "{{ item.username.split(' ')[0] }}"
+        auth_user: administrator
+        password: "{{ samba_adminpass }}"
+      loop: "{{ hostvars['localhost']['userlist'].list }}"
