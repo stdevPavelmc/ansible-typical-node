@@ -133,3 +133,23 @@
         state: directory
       loop: "{{ fileserver.shares }}"
  
+- name: Create the DNS entries related to this service
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Create the A record for the mail server
+      include_role:
+        name: samba_dns_actions
+      vars:
+        action: add
+        server: "{{ samba.host }}"
+        zone: "{{ domain.fqdn }}"
+        name: "{{ hostvars['fileserver'].ansible_hostname.split('.')[0] }}"
+        type: "A"
+        data: "{{ hostvars['fileserver'].ansible_host }}"
+        user: Administrator
+        password: "{{ samba_adminpass }}"
