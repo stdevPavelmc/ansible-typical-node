@@ -81,7 +81,7 @@
         action: add
         server: "{{ samba.host }}"
         zone: "{{ domain.fqdn }}"
-        name: "mail"
+        name: "{{ hostvars['mail'].ansible_hostname.split('.')[0] }}"
         type: "A"
         data: "{{ hostvars['mail'].ansible_host }}"
         user: Administrator
