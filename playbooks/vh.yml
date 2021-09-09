@@ -105,6 +105,7 @@
   vars_files:
     - "../vars/secrets.yml"
     - "../vars/domain.yml"
+    - "../vars/vh.yml"
 
   tasks:
     - name: Create the A record for the vh server
@@ -114,7 +115,7 @@
         action: add
         server: "{{ samba.host }}"
         zone: "{{ domain.fqdn }}"
-        name: "vh"
+        name: "{{ hostvars['vh'].ansible_hostname.split('.')[0] }}"
         type: "A"
         data: "{{ hostvars['vh'].ansible_host }}"
         user: Administrator
