@@ -34,15 +34,7 @@
         state: started
         template_options: --release focal --dist ubuntu --arch amd64 --no-validate
       with_dict: "{{ cts }}"
-      loop_control:
-        pause: 5
       tags: install
-
-    - name: debug
-      debug:
-        msg: "{{ item }}"
-      with_items: "{{ cts }}"
-      tags: post
 
     - name: Install openssh in the CTs
       shell: echo "apt install openssh-server -y" | lxc-attach --name="{{ item }}" -- 
