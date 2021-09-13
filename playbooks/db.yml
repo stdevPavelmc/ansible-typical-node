@@ -1,0 +1,120 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: install & configure a mariadb-server with apache + phpldapadmin serving on the local net
+
+---
+- name: Install the mysql (mariadb) server
+  hosts: db
+  vars_files:
+    - "../vars/domain.yml"
+    - "../vars/secrets.yml"
+  vars:
+    pkgs:
+      - mariadb-server
+      - python3-mysqldb
+
+  tasks:
+    - name: installing mariadb server
+      package:
+        name: "{{ pkgs }}"
+        state: present
+
+    - name: Start mysql service
+      service:
+        name: mysql
+        state: started
+
+    - name: Check for a changed password
+      stat:
+        path: /root/maria.configured
+      register: my_confed
+
+    - name: Change root password from start
+      mysql_user:
+        name: dbadmin
+        host: localhost
+        password: "{{ mysql_dbadmin_pass }}" # from secrets
+        priv: "*.*:ALL,GRANT"
+      when: not my_confed.stat.exists|bool
+
+    - name: Set mysql configured
+      shell: touch /root/maria.configured
+      when: not my_confed.stat.exists|bool
+
+    - name: Enable access on the network
+      lineinfile:
+        path: /etc/mysql/mariadb.conf.d/50-server.cnf
+        regexp: "^bind-address *.*$"
+        line: "bind-address = 0.0.0.0"
+        owner: root
+        mode: 0644
+
+- name: Install apache2 web server
+  hosts: db
+  vars:
+    pkgs:
+      - apache2
+      - php
+      - php-zip
+      - php-json
+      - php-mbstring
+      - php-mysql
+
+  tasks:
+    - name: Install required packages for apache
+      package:
+        name: "{{ pkgs }}"
+        state: present
+
+- name: Install phpmyadmin
+  hosts: db
+  vars_files:
+    - "../vars/secrets.yml"
+
+  tasks:
+    - name: Check if it's installed
+      stat:
+        path: /usr/share/phpmyadmin/index.php
+      register: is_installed
+
+    - name: Generate a strong pass for the phpmyadmin db
+      shell: date -u | md5sum | awk '{print $1}'
+      register: md5_pass
+      changed_when: False
+
+    - name: debconf for pma
+      debconf: name=phpmyadmin question='phpmyadmin/dbconfig-install' value='true' vtype='boolean'
+      when: not is_installed.stat.exists|bool
+
+    - name: debconf for pma
+      debconf: name=phpmyadmin question='phpmyadmin/app-password-confirm' value='{{ md5_pass.stdout }}' vtype='password'
+      when: not is_installed.stat.exists|bool
+
+    - name: debconf for pma
+      debconf: name=phpmyadmin question='phpmyadmin/mysql/admin-pass' value='{{ mysql_dbadmin_pass }}' vtype='password'
+      when: not is_installed.stat.exists|bool
+
+    - name: debconf for pma
+      debconf: name=phpmyadmin question='phpmyadmin/mysql/app-pass' value='{{ mysql_dbadmin_pass }}' vtype='password'
+      when: not is_installed.stat.exists|bool
+
+    - name: debconf for pma
+      debconf: name=phpmyadmin question='phpmyadmin/reconfigure-webserver' value='apache2' vtype='multiselect'
+      when: not is_installed.stat.exists|bool
+
+    - name: install pma
+      apt: pkg=phpmyadmin state=present
+      when: not is_installed.stat.exists|bool
+
+    - name: secure the phpmyadmin
+      lineinfile:
+        dest: /etc/phpmyadmin/apache.conf
+        insertafter: '    DirectoryIndex index.php'
+        line: '    AllowOverride All'
+      when: not is_installed.stat.exists|bool
+    
+    - name: apply changes
+      service:
+        name: apache2
+        state: restarted
+      when: not is_installed.stat.exists|bool
