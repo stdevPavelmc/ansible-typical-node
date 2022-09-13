@@ -16,41 +16,45 @@
         msg: "Samba NETBIOS must be shorter and not equal than REALM"
       when: samba.realm == samba.netbios
 
+    - name: Update package facts
+      package_facts:
+        manager: "auto"
+
+    - name: Fail if samba is installed
+      fail:
+        msg: "This system has a previous samba intalled, use the playbook dc_reset to clean it up before provisioning"
+      when: "'samba' in ansible_facts.packages"
+
     - name: Samba install
-      package:
+      ansible.builtin.apt:
         name:
           - samba
+          - samba-common
           - winbind
-        state: present
-    
-    - name: Remove default configuration files
-      file:
-        path: "{{ item }}"
-        state: absent
-      with_items:
-        - /etc/krb5.conf
-        - /etc/samba/smb.conf
-      ignore_errors: True
+        update_cache: yes
+        update_cache_retries: 3
+        install_recommends: yes
 
-    - name: Find old db files of samba
-      find:
-        paths: /var/lib/samba
-        use_regex: False
-        recurse: True
-        patterns:
-          - '*.tdb'
-          - '*.ldb'
-          - '*.key'
-          - '*tls'
-          - '*conf.update'
-      register: db_to_del
-    
-    - name: Remove old provision files
-      file:
-        path: "{{ item.path }}"
+    - name: Disable systemd-reolve
+      ansible.builtin.systemd:
+        name: systemd-resolved
+        enabled: no
+        masked: yes
+        state: stopped
+
+    - name: Create the resolv.conf
+      template:
+        src: ../templates/{{ ansible_hostname }}/etc/resolv.conf.j2
+        dest: /etc/resolv.conf
+        owner: root
+        group: root
+        mode: '0644'
+        backup: yes
+
+    - name: Remove the smb.conf file
+      ansible.builtin.file:
+        name: /etc/samba/smb.conf
         state: absent
-      with_items:
-        - "{{ db_to_del.files }}"
 
     - name: Create AD Domain Configuration
       command: samba-tool domain provision --use-rfc2307 \

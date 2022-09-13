@@ -31,12 +31,14 @@
     - "../vars/domain.yml"
 
   tasks:
+    # Base OU
     - name: Creation of base OU
       include_role:
         name: samba_ou_create
       vars:
         ou: "OU={{ samba.base_ou }}"
 
+    # OUs...
     - name: Creation of OUs
       include_role:
         name: samba_ou_create
@@ -45,20 +47,22 @@
       with_items:
         - "{{ hostvars['localhost']['domain_ous'].stdout_lines }}"
 
+    # domain users inside OUs
     - name: Creation of domain users
       include_role:
         name: samba_user_create
       vars:
-        username: "{{ item.username.split(' ')[0] }}"
+        username: "{{ item.username | replace(' ','') }}"
         password: "{{ domain_users_default_password }}"
         givenname: "{{ item.givenname }}"
         surname: "{{ item.surname }}"
-        email: "{{ item.username.split(' ')[0] }}@{{ domain.fqdn }}"
+        email: "{{ item.username | replace(' ','') }}@{{ domain.fqdn }}"
         ou: "OU={{ item.ou }},OU={{ samba.base_ou }}"
         description: "Created by Ansible"
         department: "{{ item.ou }}"
       loop: "{{ hostvars['localhost']['userlist'].list }}"
 
+    # Linux link user
     - name: Creation of the Linux user
       include_role:
         name: samba_user_create
@@ -68,6 +72,7 @@
         ou: "CN=Users"
         description: "Created by Ansible"
 
+    # default functional groups
     - name: Creation of groups inside the OUs
       include_role:
         name: samba_groups
@@ -80,13 +85,66 @@
         password: "{{ samba_adminpass }}"
       loop: "{{ hostvars['localhost']['domain_ous'].stdout_lines }}"
 
+    # Add users to the funtional groups
     - name: Add users to the respective groups
       include_role:
         name: samba_groups
       vars:
         action: addmembers
         group: "{{ item.ou }}"
-        users: "{{ item.username.split(' ')[0] }}"
+        users: "{{ item.username | replace(' ','') }}"
         auth_user: administrator
         password: "{{ samba_adminpass }}"
       loop: "{{ hostvars['localhost']['userlist'].list }}"
+
+    # service groups (squid/mail)
+    - name: Creation of service OU
+      include_role:
+        name: samba_ou_create
+      vars:
+        ou: "OU={{ services.name }},OU={{ samba.base_ou }}"
+
+    # Creation of service groups [SQUID]
+    - name: Creation of SQUID groups
+      include_role:
+        name: samba_groups
+      vars:
+        action: add
+        group: "{{ item.alias }}"
+        description: 'Created by Ansible'
+        group_ou: "OU={{ services.name }},OU={{ samba.base_ou }}"
+        auth_user: administrator
+        password: "{{ samba_adminpass }}"
+      loop: "{{ services.squid }}"
+
+    # add users to service groups SQUID 
+    - include_tasks: ../tasks/service_group_add_squid.yml
+      loop: "{{ hostvars['localhost']['userlist'].list }}"
+      loop_control:
+        loop_var: user
+
+    # Creation of service groups [MAIL]
+    - name: Creation of MAIL groups
+      include_role:
+        name: samba_groups
+      vars:
+        action: add
+        group: "{{ item.alias }}"
+        description: 'Created by Ansible'
+        group_ou: "OU={{ services.name }},OU={{ samba.base_ou }}"
+        auth_user: administrator
+        password: "{{ samba_adminpass }}"
+      loop: "{{ services.mail }}"
+
+      # Add users to the MAIL National
+      - name: Add users to MAIL groups
+        include_role:
+          name: samba_groups
+        vars:
+          action: addmembers
+          group: "{{ item.ou }}"
+          users: "{{ item.username | replace(' ','') }}"
+          auth_user: administrator
+          password: "{{ samba_adminpass }}"
+        where: 
+        loop: "{{ hostvars['localhost']['userlist'].list }}"

@@ -4,14 +4,16 @@
 # - Must include domain.yml & secrets first
 # - name & ips must match the host.ini inventory
 # - This var is to create the CTs via create_ct roles, see all variable available
-#
 
 ---
 # Generic proxmox data
 api_host: 192.168.0.2
 api_user: root@pam
 api_password: "{{ proxmox_api_password }}"
+# this key is the public key that will be installed on the Proxmox's CTs to gain passwordless access to them
 api_pubkey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfSBxInja/hGJs/WIU+Tdd1KQ6bomGg0lOH/14GBcDb9haQqnuI0WOhovAwlTQYQaboZLT7M6zI00kygdtRSDbFY+myQC6ycCnKfL+J4JVTq0ffIPCuTCL9KCeiB1W6Zzsj7jeYgZ1xgsjzhuDjUfZYKQD9XskxPH122Wp9iGUrTKNTd/8IbcN03QSnCqeIuW5FN6gYjsxx6lHvBWy6HhDPPMj2rbaBbJfzvJBZXNFK+JhtwEZMEcdAZv1LVK0ytncTtXgHkBZiRXa8pW3/cbdzqh+lViOlHryNdVJcHN4ivc7oiN9JXMkErhb10zAmvAD/J1HkY/0wDS0/JAuUL+3rAYUGLlCD3/nC8D+Gnbo6nUNiXOp8zrDcUoLX+uVSCPHU07dBX7CIb4pCoBrq1cd4DehaogaCGSpRFopYy3tC81rLCIQivgU0+ZQGywAF5weiTjySLyNzIqy9UX2YmzCodLPZPk3RtKuWd14nUURDPIVFMLFBRtFCuS1Ri+D2QU= pavel@agatha\nssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDSGG8M+27JZJlB2YSfvoSmd26CkGd1+6msH9ojRjQWrWx136uiU/FRkREtsPftM/JHmWfAB9YACFFSg8QPR5WP5I2g3fR+fVjvUop1zAZGHL9hsgBN1RfaPdx7b89dmzujymjgQws8UB0ljVdnGtp6A+rFjxcmqrYMChcl6iDnA8nbibb4n6eiNmA8DzR4JQYgp5F35H9EYijFV3XOHWaoRTjRHN5X4qvaLBJH3LIJy1Gsm0hf68H94NQVWzB5ggoz3olhbgWgpZQ3qItUkHvCbhoTtgz1SXsSEPWMbqagCzEnoMg3xFNjkWOg+q1xfPlGMfHympk+1HKTnAfiD3yx /home/pavel/.ssh/id_rsa"
+# by hand for now, if you need to use another, please download it, check the correct name under /var/lib/vz/vztmpl/
+api_template: 'local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz'
 
 # default CT vars
 defaults:
@@ -22,7 +24,7 @@ defaults:
   swap: 512
   disk: 8
   storage: local
-  template: 'local:vztmpl/ubuntu-20.04-standard_20.04-1_amd64.tar.gz'
+  template: "{{ api_template }}"
   bridge: vmbr0
   storale: local
   dns: "10.0.3.4"
@@ -33,10 +35,10 @@ defaults:
 
 # CT specific details (you can add any of the members of the defaults when needed)
 cts:
-  # dns:
-  #   id: 101
-  #   ip: "192.168.0.3"
-  #   dns: "192.168.0.3"
+  dns:
+    id: 101
+    ip: "192.168.0.3"
+    dns: "192.168.0.3"
   dc:
     id: 102
     ip: "192.168.0.4"
@@ -69,8 +71,6 @@ cts:
   db:
     id: 108
     ip: "192.168.0.10"
-  adm:
-    id: 109
-    ip: "192.168.0.100"
-
-
+  # adm:
+  #   id: 109
+  #   ip: "192.168.0.11"

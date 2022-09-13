@@ -5,7 +5,7 @@
 # Requisite: Create all CTs we need as per host vars
 
 ---
-- name: Create a new CT
+- name: Create the needs CT on the proxmox machine
   hosts: pve
   remote_user: root
   vars_files:
@@ -21,7 +21,7 @@
         api_user: "{{ api_user }}"
         api_password: "{{ api_password }}"
         api_host: "{{ api_host }}"
-        hostname: "{{ item.key }}.{{ domain_fqdn }}"
+        hostname: "{{ item.key }}.{{ domain.fqdn }}"
         node: "{{ item.value.node | default(defaults.node) }}"
         cores: "{{ item.value.cores | default(defaults.cores) }}"
         cpus: "{{ item.value.cpus | default(defaults.cpus) }}"
@@ -34,10 +34,10 @@
         onboot: "{{ item.value.onboot | default(defaults.onboot) }}"
         # timezone: "{{ item.value.timezone | default(defaults.timezone) }}" 
         # pubkey: "{{ item.value.pubkey | default(defaults.pubkey) }}"
-        searchdomain: "{{ domain_fqdn }}"
+        searchdomain: "{{ domain.fqdn }}"
         nameserver: "{{ item.value.dns | default(defaults.dns) }}"
         ostemplate: "{{ defaults.template }}"
-        netif: '{"net0":"name=eth0,gw={{ item.value.gw | default(domain_dmz_gw) }},ip={{ item.value.ip }}/{{ domain_dmz_netmask }},bridge={{ item.value.bridge | default(defaults.bridge) }}"}'
+        netif: '{"net0":"name=eth0,gw={{ item.value.gw | default(net.gw) }},ip={{ item.value.ip }}/{{ net.netmask }},bridge={{ item.value.bridge | default(defaults.bridge) }}"}'
         state: present
       with_dict: "{{ cts }}"
       loop_control:
@@ -56,7 +56,9 @@
     - name: Copy controllers pubkey to the nodes
       shell: echo "mkdir -p /root/.ssh && echo '{{ api_pubkey }}' > /root/.ssh/authorized_keys" | pct enter {{ item.item.value.id }}
       with_items: "{{ created_cts_pve.results }}"
+      changed_when: False
 
     - name: Set correct timezone on the nodes
       shell: echo "timedatectl set-timezone {{ defaults.timezone }}" | pct enter {{ item.item.value.id }}
       with_items: "{{ created_cts_pve.results }}"
+      changed_when: False

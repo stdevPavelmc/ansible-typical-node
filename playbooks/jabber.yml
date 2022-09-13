@@ -95,7 +95,7 @@
     - name: Retrieve the AD cert and put in on local storage if needed
       shell: echo | openssl s_client -connect {{ samba.host }}:636 2>&1 | sed --quiet '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/ejabberd/cert/ldap.pem
       when: (not ldap_cert.stat.exists|bool)
-      changed_when: False
+      #changed_when: False
       tags: ssl
 
     - name: Generate DH Parameters (2048 bits)
@@ -115,14 +115,14 @@
         force: True
       tags: config
          
-    - name: Restart the service
-      ansible.builtin.systemd:
-        name: ejabberd
-        enabled: yes
-        masked: no
-        state: restarted
-      tags: restart
-      changed_when: False
+    # - name: Restart the service
+    #   ansible.builtin.systemd:
+    #     name: ejabberd
+    #     enabled: yes
+    #     masked: no
+    #     state: restarted
+    #   tags: restart
+    #   changed_when: False
 
 - name: Create the DNS entries related to this service
   hosts: dc

@@ -4,30 +4,46 @@
 ---
 # Domain general data
 domain:
-  netbios: lxc.cu
-  fqdn: lxc.cu
+  netbios: co7wttest
+  fqdn: co7wt.cu
   # Yes, explicit full email, user must exist on cvs to load later, or be an alias
-  postmaster: pavelmc@lxc.cu
+  postmaster: pavelmc@co7wt.cu
 
 # samba related
 samba:
-  realm: "{{ domain.netbios | upper}}"
-  host: "dc.{{ domain.netbios }}"
-  netbios: &netbios "{{ domain.netbios.split('.')[0]| upper }}"
+  realm: "{{ domain.fqdn | upper}}"
+  host: "dc.{{ domain.fqdn }}"
+  netbios: &netbios "{{ domain.fqdn.split('.')[0]| upper }}"
   base_dn: "DC={{ domain.fqdn | replace('.',',DC=') }}"
   base_ou: *netbios
-  # master administrator's passwords is in secrets file
+  # master administrator's passwords is in secrets.yml file as "samba_adminpass"
   # AD LDAP user details (must match ldap_bind_user below)
   link:
     user: "linux"
-    # passwd is on secrets like: ldap_bind_passwd
+    # passwd is on secrets.yml file as "ldap_bind_passwd"
+
+# Service OU for special groups
+services:
+  name: SERVICE_GROUPS
+  mail:
+    - name: Nacional
+      alias: "Correo nacional"
+    - name: Local
+      alias: "Correo local"
+  squid:
+    - name: Vip
+      alias: "Internet Sin restricciones"
+    - name: Normal
+      alias: "Internet normal"
+    - name: Nacional
+      alias: "Internet solo nacional"
 
 # Self Signed Certificate
 my_cert:
   country: CU
   state: Camaguey
   city: Camaguey
-  organization: LXC
+  organization: Dummy enterprise from CO7WT.
   ou: Nodo
   hostname: "{{ samba.host }}"
   cert: "../data/sscert/{{ domain.fqdn }}.crt"
@@ -36,24 +52,24 @@ my_cert:
 
 # networking
 net:
-  gw: 10.0.3.1
-  netmask: 24
+  gw: 192.168.0.1
+  netmask: 27
   dns:
-    lan: 10.0.3.1
-    dmz: 10.0.3.1
-    upstream:
-      - 1.0.0.1
-      - 1.1.1.1
-      - 8.8.8.8
+    lan: 192.168.0.4 # this is the ADDC ip, the DNS lan users will use
+    dmz: 192.168.0.3 # this is the catching proxy DNS server, the one the servers in the DMZ will use
+    upstream: # upstream DNS to use, max 3.
+      - 201.220.199.113
+      - 201.220.222.131
+      - 201.220.222.132
 
 # Alternate local repositories
 repo:
   proto: http
-  host: 10.0.3.1
+  host: 192.168.0.15
   port: 8080
   root: focal
   flavors: focal
-  source: local
+  source: local # local if on your network, anything else to use the default ones.
 
 # mail settings
 mail:
@@ -65,7 +81,7 @@ mail:
   # copia:
   # message_size: 2
   # default_mailbox_size: 200M
-  mynetworks: '!10.0.3.6, 10.0.3.0/{{ net.netmask}}'
+  mynetworks: '!10.0.3.6, 10.0.3.0/{{ net.netmask}}' # see mailad for details
   # smarthost:
   #X   national: ".cu"
   everyone: todos@{{ domain.fqdn }}
@@ -106,10 +122,10 @@ mail:
   # statistics_enable: True
   # host_on_internet: False
 
-# if the key name es the same as the name property a DNS CNAME entry will be created
+# if the key name is the same as the name property a DNS CNAME entry will be created
 virtual_hosts:
   default:
-    isdefault: True
+    isdefault: true
     root: /var/www/html/
     name: vh
     body_size: 1M
@@ -147,3 +163,10 @@ fileserver:
     - name: profiles
       path: /samba/profiles
       comment: Profiles
+
+
+# Proxy settings, not used yet.
+proxy:
+  user_parent: True
+  host: proxy.co7wt.cu
+  port: 3128

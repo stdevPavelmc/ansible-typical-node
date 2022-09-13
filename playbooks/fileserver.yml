@@ -10,6 +10,18 @@
     - "../vars/secrets.yml"
     - "../vars/domain.yml"
     - "../vars/cts.yml"
+  vars:
+    packages:
+      - samba
+      - krb5-user
+      - winbind
+      - libnss-winbind
+      - libpam-winbind
+      - resolvconf
+    services:
+      - nmbd
+      - smbd
+      - winbind
 
   tasks:
     - name: Validation for netbios vs realm ({{ samba.netbios }} / {{ samba.realm }})
@@ -26,7 +38,7 @@
 
     - name: Install samba and others...
       package:
-        name: "{{ fileserver.packages }}"
+        name: "{{ packages }}"
         state: present
 
     - name: Install krb5.conf
@@ -116,7 +128,7 @@
     
     - name: Restart services
       ansible.builtin.systemd:
-        name: "{{ fileserver.services }}"
+        name: "{{ services }}"
         enabled: yes
         masked: no
         state: restarted
