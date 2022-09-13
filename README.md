@@ -76,7 +76,7 @@ You need to have at least a minumim knoledge of networking and linux server admi
 
 ## This is free software!
 
-All contents of this repository is licended under GPLv3 (see [LICENSE.GPLv3](LICENSE.GPLv3) file for details), the uathor will thanks any citation on derived works.
+All contents of this repository is licended under GPLv3 (see [LICENSE.GPLv3](LICENSE.GPLv3) file for details), the author will thanks any citation and mentions on derived works.
 
 ## Contribution & donations.
 
