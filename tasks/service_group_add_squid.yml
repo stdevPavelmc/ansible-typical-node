@@ -1,0 +1,12 @@
+# # Add users to service groups [SQUID]
+- name: add users to service groups squid
+  include_role:
+    name: samba_groups
+  vars:
+    action: addmembers
+    group: "{{ item.alias }}"
+    users: "{{ user.username | replace(' ','') }}"
+    auth_user: administrator
+    password: "{{ samba_adminpass }}"
+  when: (item.name == user.proxy)
+  loop: "{{ services.squid }}"

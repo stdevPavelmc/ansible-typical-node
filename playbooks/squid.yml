@@ -1,0 +1,64 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: Install a squid proxy server
+
+---
+- name: Install Squid Proxy server
+  hosts: sq
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+  vars:
+    config_files:
+      - squid.conf
+      - forbidden_regex.txt
+      - forbidden_dstdomain.txt
+
+  tasks:
+    - name: Install squid
+      package:
+        name: squid
+        state: present
+
+    - name: Stop
+      service:
+        name: squid
+        state: stopped
+      changed_when: False
+
+    - name: Install templates
+      template:
+        src: ../templates/sq/etc/squid/{{ item }}.j2
+        dest: /etc/squid/{{ item }}
+      loop: "{{ config_files }}"
+
+    - name: Validate config
+      shell: /usr/sbin/squid -k parse
+      changed_when: False
+
+    - name: Cache creation
+      shell: /usr/sbin/squid -z
+      changed_when: False
+
+    - name: Start
+      service:
+        name: squid
+        state: started
+      changed_when: False
+
+    # Extra LDAP settings
+    - name: Check if we have the samba cert in place already
+      stat:
+        path: /etc/ssl/certs/samba.crt
+      register: samba_cert
+
+    - name: Retrieve the AD cert and put in on local storage if needed
+      shell: echo | openssl s_client -connect {{ samba.host }}:636 2>&1 | sed --quiet '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /etc/ssl/certs/samba.crt
+      when: not samba_cert.stat.exists
+
+    - name: config ldap to accept the samba cert
+      lineinfile:
+        path: /etc/ldap/ldap.conf
+        regexp: "^TLS_CACERT .*$"
+        line: "TLS_CACERT /etc/ssl/certs/samba.crt"

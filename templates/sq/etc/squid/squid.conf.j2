@@ -1,0 +1,126 @@
+# listening port
+http_port 0.0.0.0:3128
+
+# what DNS server to use
+dns_nameservers {{ net.dns.dmz }}
+
+# coredumps and other generic configs
+coredump_dir /var/spool/squid
+
+# security measures
+via off
+forwarded_for off
+reload_into_ims on
+quick_abort_min 0 KB
+quick_abort_max 0 KB
+quick_abort_pct 100
+read_ahead_gap 17 KB
+negative_ttl 0 seconds
+positive_dns_ttl 1 hour
+negative_dns_ttl 1 seconds
+range_offset_limit 0
+httpd_suppress_version_string on
+visible_hostname anonymous
+ftp_user squid@example.com
+ftp_passive on
+ftp_sanitycheck on
+error_directory /usr/share/squid/errors/es-es
+
+# caching options
+cache_mem 256 MB
+cache_dir ufs /var/spool/squid 2048 16 256
+cache_replacement_policy heap LFUDA
+memory_replacement_policy heap GDSF
+maximum_object_size 32 MB
+minimum_object_size 3 KB
+maximum_object_size_in_memory 4 MB
+ipcache_size 10240
+ipcache_low 98
+ipcache_high 99
+fqdncache_size 10240
+cache_swap_low 90
+cache_swap_high 95
+ 
+# Cache dir Logs:
+cache_access_log /var/log/squid/access.log
+cache_log /var/log/squid/cache.log
+cache_store_log /var/log/squid/store.log
+
+# refresh patterns (AGRESSIVE)
+refresh_pattern -i .(gif|png|jpg|ico|bmp|pict|tiff)$ 14400 80% 43200 refresh-ims
+refresh_pattern -i .(swf|htm|html|shtm|shtml|nub)$ 14400 80% 43200 refresh-ims refresh-ims
+refresh_pattern -i .(rpm|cab|deb|exe|msi|msu|zip|tar|xz|bz|bz2|lzma|gz|tgz|rar|bin|7z|doc?|xls?|ppt?|pdf|nth|psd|sis)$ 14400 80% 43200 refresh-ims
+refresh_pattern -i .(avi|iso|wav|mid|ogg|mp?|mpeg?|mpeg|aiff?|mov|3gp|wm?|flv|x-flv|axd)$ 14400 80% 43200 refresh-ims
+refresh_pattern -i .(qtm?|viv|au|ram?|snd|sit|hqx|arj|lzh|lha|txt|rtf|tex|latex|class|js|ico|do|dll|asf|dat|psf)$ 14400 80% 43200
+refresh_pattern -i \.a[0-9][0-9]$ 14400 80% 43200
+refresh_pattern -i \.r[0-9][0-9]$ 14400 80% 43200
+refresh_pattern -i \.css$ 10 20% 4320
+
+# Default
+refresh_pattern ^ftp: 1440 20% 10080
+refresh_pattern ^gopher: 1440 0% 1440
+refresh_pattern -i (/cgi-bin/|\?) 0 0% 0
+refresh_pattern . 0 20% 4320
+
+# auth basic
+auth_param basic program /usr/lib/squid/basic_ldap_auth -v3 -R -H ldaps://{{ samba.host }}:636/ -b "OU={{ samba.base_ou }},{{ samba.base_dn }}" -D "CN={{ samba.link.user }},CN=Users,{{ samba.base_dn }}" -w "{{ ldap_bind_password }}" -f "(&(sAMAccountName=%s)(|(userAccountControl=512)(userAccountControl=66048)(userAccountControl=8398120)))" 
+auth_param basic children 10
+auth_param basic realm Proxy {{ samba.base_ou }}
+auth_param basic credentialsttl 10 minute
+
+# password request
+acl passwd proxy_auth REQUIRED
+
+# external LDAP groups
+external_acl_type memberof %LOGIN /usr/lib/squid/ext_ldap_group_acl -R -K -S -b "OU={{ samba.base_ou }},{{ samba.base_dn }}" -D "CN={{ samba.link.user }},CN=Users,{{ samba.base_dn }}" -w "{{ ldap_bind_password }}" -f "(&(objectClass=person)(sAMAccountName=%v))" -H "ldaps://{{ samba.host }}:636/"
+
+#Grupos en el LDAP
+acl Vip external memberof Vip
+acl Normal external memberof Normal
+acl Nacional external memberof Nacional
+
+# default ports definition
+acl SSL_ports port 443
+acl Safe_ports port 80		# http
+acl Safe_ports port 21		# ftp
+acl Safe_ports port 443		# https
+acl Safe_ports port 1025-65535	# unregistered ports
+acl CONNECT method CONNECT
+
+# default permission aplication
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+
+# manager just to localhost
+http_access allow localhost manager
+http_access deny manager
+
+# extra configs
+include /etc/squid/conf.d/*
+
+# allow unrestricted access to the local domain
+acl local_domain dstdomain {{ domain.fqdn }}
+http_access allow local_domain
+
+# vip access
+http_access allow Vip passwd 
+
+# block ip numbers
+acl not_ip url_regex [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}
+http_access deny not_ip
+
+# stop forbidden domains and regexs
+acl forbidden_domains dstdomain /etc/squid/forbidden_dstdomains.txt
+acl forbidden_regex url_regex /etc/squid/forbidden_regex.txt
+http_access deny forbidden_domains
+http_access deny forbidden_regex
+
+# allow national access
+acl cuba dstdomain .cu
+http_access allow cuba Nacional passwd
+
+# allow internet 
+http_access allow Normal passwd
+
+# no line below this
+http_access deny all

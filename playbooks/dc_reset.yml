@@ -1,0 +1,32 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: purge the configuration of a previous samba install
+
+---
+- name: Purge any trace of a previous samba4 install on the system
+  hosts: dc
+  remote_user: root
+  vars_files:
+    - "../vars/secrets.yml"
+    - "../vars/domain.yml"
+
+  tasks:
+    - name: Fix any package problem
+      shell: apt install -f -y
+      changed_when: False
+
+    - name: Samba purge
+      ansible.builtin.apt:
+        purge: yes
+        state: absent
+        name:
+          - samba
+          - samba-common
+          - winbind
+
+    - name: Remove folders
+      shell: rm -rdf {{ item }}
+      with_items:
+        - /etc/samba
+        - /var/lib/samba
+      changed_when: False

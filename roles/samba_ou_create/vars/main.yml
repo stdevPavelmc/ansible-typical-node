@@ -1,0 +1,5 @@
+---
+# vars file for samba_ou_create
+
+ou: "OU=test"
+description: "Created by Ansible"

@@ -1,0 +1,10 @@
+---
+# vars file for nginx_site
+
+default_site: False
+site_root: /var/www/html/
+site_name: vh
+max_body_size: 16M
+site_domain: example.com
+site_filename: default
+only_cu: False

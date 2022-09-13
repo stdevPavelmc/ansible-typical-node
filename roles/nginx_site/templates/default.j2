@@ -1,0 +1,69 @@
+# http redir to https ALWAYS
+server {
+	listen 80{% if default_site is defined and default_site == True %} default_server{% endif %};
+	listen [::]:80{% if default_site is defined and default_site == True %} default_server{% endif %};
+	server_name {% if default_site is defined and default_site == True %}_{% else %}{{ site_name }}.{{ site_domain }}{% endif %};
+	return 301 https://$host$request_uri;
+}
+
+# https server 
+server {
+	listen 443 ssl http2{% if default_site is defined and default_site == True %} reuseport default_server{% endif %};
+	listen [::]:443 ssl http2{% if default_site is defined and default_site == True %} reuseport default_server{% endif %};
+	
+	# server name
+	server_name {% if default_site is defined and default_site == True %}_{% else %}{{ site_name }}.{{ site_domain }}{% endif %};
+
+	# root of the files to server
+	root {{ site_root }};
+
+	# incluide SSL config
+	include security.conf;
+
+{% if ony_cu is defined and only_cu|bool %}
+	# include only cuban IPs
+	include cuba.conf;
+
+{% endif %}
+	# include general parameters
+	include general.conf;
+
+	# exploits
+	include exploits.conf;
+
+	# restrict methods
+    if ($request_method !~ ^(GET|POST|PUT|HEAD|CONNECT)$) {
+        return '405';
+    }
+ 
+	# logging
+	access_log /var/log/nginx/{{ site_name }}_access.log;
+	error_log /var/log/nginx/{{ site_name }}_error.log warn;
+
+	# index options
+	index index.php index.html index.nginx-debian.html;
+
+	# max body size
+	client_max_body_size   {{ max_body_size }};
+
+	location / {
+		# First attempt to serve request as file, then
+		# as directory, then fall back to displaying a 404.
+		try_files $uri $uri/ =404;
+	}
+
+	# pass PHP scripts to FastCGI server
+	
+	location ~ \.php$ {
+		include snippets/fastcgi-php.conf;
+	
+		# With php-fpm (or other unix sockets):
+		fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+	}
+
+	# deny access to .htaccess files, if Apache's document root
+	# concurs with nginx's one
+	location ~ /\.ht {
+		deny all;
+	}
+}

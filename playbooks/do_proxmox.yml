@@ -1,0 +1,51 @@
+# Pavel Milanes [pavelmc@gmail.com] 2021
+#
+# Target: install & configure a samba server as domain member and file server
+
+- name: Configure proxmox server
+  import_playbook: playbook/proxmox.yml
+
+- name: create the CTS
+  import_playbook: playbook/create_pmx_cts.yml
+
+- name: start the CTS
+  import_playbook: playbook/lxc_cts_start.yml
+
+- name: upgrade the CTS from the repo
+  import_playbook: playbook/system_update.yml
+
+- name: Create SSL certs
+  import_playbook: playbook/gen_ss_certs.yml
+
+- name: install the DC
+  import_playbook: playbook/dc.yml
+
+- name: create users
+  import_playbook: playbook/create_domain_users.yml
+
+- name: install the dns catching
+  import_playbook: playbook/dns.yml
+
+- name: install the fileserver
+  import_playbook: playbook/fileserver.yml
+
+- name: install the db server
+  import_playbook: playbook/db.yml
+
+- name: install the fileserver
+  import_playbook: playbook/fileserver.yml
+
+- name: install the jabber
+  import_playbook: playbook/jabber.yml
+
+- name: install mail
+  import_playbook: playbook/mail.yml
+
+- name: install vh
+  import_playbook: playbook/vh.yml
+
+- name: install rainloop on vh
+  import_playbook: playbook/rainloop_on_vh.yml
+
+- name: install squid
+  import_playbook: playbook/squid.yml
